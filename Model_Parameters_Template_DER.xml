@@ -250,6 +250,30 @@
             <Value>10</Value>
             <Sensitivity_Parameters>nan</Sensitivity_Parameters>
         </sr_response_time>
+        <nsr_max_ramp_rate analysis="no">
+            <Value>0</Value>
+            <Sensitivity_Parameters>nan</Sensitivity_Parameters>
+            <Type>float</Type>
+            <Coupled>None</Coupled>
+        </nsr_max_ramp_rate>
+        <sr_max_ramp_rate analysis="no">
+            <Value>0</Value>
+            <Sensitivity_Parameters>nan</Sensitivity_Parameters>
+            <Type>float</Type>
+            <Coupled>None</Coupled>
+        </sr_max_ramp_rate>
+        <fr_response_time analysis="no">
+            <Value>10</Value>
+            <Sensitivity_Parameters>nan</Sensitivity_Parameters>
+            <Type>int</Type>
+            <Coupled>None</Coupled>
+        </fr_response_time>
+        <fr_max_ramp_rate analysis="no">
+            <Value>0</Value>
+            <Sensitivity_Parameters>nan</Sensitivity_Parameters>
+            <Type>float</Type>
+            <Coupled>None</Coupled>
+        </fr_max_ramp_rate>
         <startup analysis="no">
             <Type>bool</Type>
             <Coupled>None</Coupled>
@@ -451,6 +475,30 @@
             <Value>10</Value>
             <Sensitivity_Parameters>nan</Sensitivity_Parameters>
         </sr_response_time>
+        <nsr_max_ramp_rate analysis="no">
+            <Value>0</Value>
+            <Sensitivity_Parameters>nan</Sensitivity_Parameters>
+            <Type>float</Type>
+            <Coupled>None</Coupled>
+        </nsr_max_ramp_rate>
+        <sr_max_ramp_rate analysis="no">
+            <Value>0</Value>
+            <Sensitivity_Parameters>nan</Sensitivity_Parameters>
+            <Type>float</Type>
+            <Coupled>None</Coupled>
+        </sr_max_ramp_rate>
+        <fr_response_time analysis="no">
+            <Value>10</Value>
+            <Sensitivity_Parameters>nan</Sensitivity_Parameters>
+            <Type>int</Type>
+            <Coupled>None</Coupled>
+        </fr_response_time>
+        <fr_max_ramp_rate analysis="no">
+            <Value>0</Value>
+            <Sensitivity_Parameters>nan</Sensitivity_Parameters>
+            <Type>float</Type>
+            <Coupled>None</Coupled>
+        </fr_max_ramp_rate>
         <macrs_term analysis="no">
             <Type>float</Type>
             <Coupled>None</Coupled>
@@ -514,6 +562,30 @@
             <Value>10</Value>
             <Sensitivity_Parameters>nan</Sensitivity_Parameters>
         </sr_response_time>
+        <nsr_max_ramp_rate analysis="no">
+            <Value>0</Value>
+            <Sensitivity_Parameters>nan</Sensitivity_Parameters>
+            <Type>float</Type>
+            <Coupled>None</Coupled>
+        </nsr_max_ramp_rate>
+        <sr_max_ramp_rate analysis="no">
+            <Value>0</Value>
+            <Sensitivity_Parameters>nan</Sensitivity_Parameters>
+            <Type>float</Type>
+            <Coupled>None</Coupled>
+        </sr_max_ramp_rate>
+        <fr_response_time analysis="no">
+            <Value>10</Value>
+            <Sensitivity_Parameters>nan</Sensitivity_Parameters>
+            <Type>int</Type>
+            <Coupled>None</Coupled>
+        </fr_response_time>
+        <fr_max_ramp_rate analysis="no">
+            <Value>0</Value>
+            <Sensitivity_Parameters>nan</Sensitivity_Parameters>
+            <Type>float</Type>
+            <Coupled>None</Coupled>
+        </fr_max_ramp_rate>
         <startup_time analysis="no">
             <Type>int</Type>
             <Coupled>None</Coupled>

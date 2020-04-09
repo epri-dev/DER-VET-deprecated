@@ -65,6 +65,10 @@
 		<duration cba="n" min="0.0" type="float" />
 		<nsr_response_time min="0" type="int" />
 		<sr_response_time min="0" type="int" />
+		<fr_response_time cba="n" min="0" type="int" />
+		<nsr_max_ramp_rate cba="n" min="0.0" type="float" />
+		<sr_max_ramp_rate cba="n" min="0.0" type="float" />
+		<fr_max_ramp_rate cba="n" min="0.0" type="float" />
 		<startup_time cba="n" min="0" type="int" />
 	</ControllableLoad>
 	<PV type="intermittentresource">
@@ -72,6 +76,10 @@
 		<name cba="n" type="string" />
 		<nsr_response_time cba="n" min="0" type="int" />
 		<sr_response_time cba="n" min="0" type="int" />
+		<fr_response_time cba="n" min="0" type="int" />
+		<nsr_max_ramp_rate cba="n" min="0.0" type="float" />
+		<sr_max_ramp_rate cba="n" min="0.0" type="float" />
+		<fr_max_ramp_rate cba="n" min="0.0" type="float" />
 		<inv_max cba="n" min="0.0" type="float" />
 		<growth cba="n" max="100.0" min="0.0" type="float" />
 		<rated_capacity cba="n" min="0.0" type="float" />
@@ -88,6 +96,10 @@
 		<nsr_response_time cba="n" min="0" type="int" />
 		<sr_response_time cba="n" min="0" type="int" />
 		<macrs_term allowed_values="3|5|7|10|15|20|25|27.5|39" cba="n" type="float" />
+		<fr_response_time cba="n" min="0" type="int" />
+		<nsr_max_ramp_rate cba="n" min="0.0" type="float" />
+		<sr_max_ramp_rate cba="n" min="0.0" type="float" />
+		<fr_max_ramp_rate cba="n" min="0.0" type="float" />
 		<min_power cba="n" min="0.0" type="float" />
 		<startup_time cba="n" min="0" type="int" />
 		<efficiency cba="n" min="0.0" type="float" />
@@ -107,6 +119,10 @@
 		<name cba="n" type="string" />
 		<nsr_response_time cba="n" min="0" type="int" />
 		<sr_response_time cba="n" min="0" type="int" />
+		<fr_response_time cba="n" min="0" type="int" />
+		<nsr_max_ramp_rate cba="n" min="0.0" type="float" />
+		<sr_max_ramp_rate cba="n" min="0.0" type="float" />
+		<fr_max_ramp_rate cba="n" min="0.0" type="float" />
 		<startup allowed_values="1|0" cba="y" type="bool" />
 		<ccost cba="y" min="0.0" type="float" />
 		<ccost_kw cba="y" min="0.0" type="float" />
@@ -140,6 +156,10 @@
 		<name type="string" />
 		<nsr_response_time cba="n" min="0" type="int" />
 		<sr_response_time cba="n" min="0" type="int" />
+		<fr_response_time cba="n" min="0" type="int" />
+		<nsr_max_ramp_rate cba="n" min="0.0" type="float" />
+		<sr_max_ramp_rate cba="n" min="0.0" type="float" />
+		<fr_max_ramp_rate cba="n" min="0.0" type="float" />
 		<daily_cycle_limit min="0" type="float" />
 		<heat_rate_high min="0.0" type="float" />
 		<startup type="bool" allowed_values="1|0"/>
