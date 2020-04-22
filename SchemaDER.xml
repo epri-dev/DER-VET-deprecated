@@ -66,6 +66,8 @@
 		<macrs_term allowed_values="3|5|7|10|15|20|25|27.5|39" cba="y" type="float" />
 		<min_power cba="n" min="0.0" type="float" />
 		<startup_time cba="n" min="0" type="int" />
+		<startup_cost cba="n" min="0" type="float" />
+		<startup allowed_values="1|0" type="bool" />
 		<efficiency cba="n" min="0.0" type="float" />
 		<fuel_cost cba="y" min="0.0" type="float" />
 		<variable_om_cost cba="y" min="0.0" type="float" />
