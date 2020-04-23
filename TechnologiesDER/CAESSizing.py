@@ -64,35 +64,35 @@ class CAESSizing(storagevet.CAESTech):
             Dictionary of optimization variables
         """
 
-        variables = {'caes_ene': cvx.Variable(shape=size, name='caes_ene'),
-                     'caes_dis': cvx.Variable(shape=size, name='caes_dis'),
-                     'caes_ch': cvx.Variable(shape=size, name='caes_ch'),
-                     'caes_ene_max_slack': cvx.Parameter(shape=size, name='caes_ene_max_slack', value=np.zeros(size)),
-                     'caes_ene_min_slack': cvx.Parameter(shape=size, name='caes_ene_min_slack', value=np.zeros(size)),
-                     'caes_dis_max_slack': cvx.Parameter(shape=size, name='caes_dis_max_slack', value=np.zeros(size)),
-                     'caes_dis_min_slack': cvx.Parameter(shape=size, name='caes_dis_min_slack', value=np.zeros(size)),
-                     'caes_ch_max_slack': cvx.Parameter(shape=size, name='caes_ch_max_slack', value=np.zeros(size)),
-                     'caes_ch_min_slack': cvx.Parameter(shape=size, name='caes_ch_min_slack', value=np.zeros(size)),
-                     'caes_on_c': cvx.Parameter(shape=size, name='caes_on_c', value=np.ones(size)),
-                     'caes_on_d': cvx.Parameter(shape=size, name='caes_on_d', value=np.ones(size)),
+        variables = {'ene': cvx.Variable(shape=size, name='caes_ene'),
+                     'dis': cvx.Variable(shape=size, name='caes_dis'),
+                     'ch': cvx.Variable(shape=size, name='caes_ch'),
+                     'ene_max_slack': cvx.Parameter(shape=size, name='caes_ene_max_slack', value=np.zeros(size)),
+                     'ene_min_slack': cvx.Parameter(shape=size, name='caes_ene_min_slack', value=np.zeros(size)),
+                     'dis_max_slack': cvx.Parameter(shape=size, name='caes_dis_max_slack', value=np.zeros(size)),
+                     'dis_min_slack': cvx.Parameter(shape=size, name='caes_dis_min_slack', value=np.zeros(size)),
+                     'ch_max_slack': cvx.Parameter(shape=size, name='caes_ch_max_slack', value=np.zeros(size)),
+                     'ch_min_slack': cvx.Parameter(shape=size, name='caes_ch_min_slack', value=np.zeros(size)),
+                     'on_c': cvx.Parameter(shape=size, name='caes_on_c', value=np.ones(size)),
+                     'on_d': cvx.Parameter(shape=size, name='caes_on_d', value=np.ones(size)),
                      }
 
         if self.incl_slack:
-            self.variable_names.update(['caes_ene_max_slack', 'caes_ene_min_slack', 'caes_dis_max_slack', 'caes_dis_min_slack', 'caes_ch_max_slack', 'caes_ch_min_slack'])
-            variables.update({'caes_ene_max_slack': cvx.Variable(shape=size, name='caes_ene_max_slack'),
-                              'caes_ene_min_slack': cvx.Variable(shape=size, name='caes_ene_min_slack'),
-                              'caes_dis_max_slack': cvx.Variable(shape=size, name='caes_dis_max_slack'),
-                              'caes_dis_min_slack': cvx.Variable(shape=size, name='caes_dis_min_slack'),
-                              'caes_ch_max_slack': cvx.Variable(shape=size, name='caes_ch_max_slack'),
-                              'caes_ch_min_slack': cvx.Variable(shape=size, name='caes_ch_min_slack')})
+            self.variable_names.update(['ene_max_slack', 'ene_min_slack', 'dis_max_slack', 'dis_min_slack', 'ch_max_slack', 'ch_min_slack'])
+            variables.update({'ene_max_slack': cvx.Variable(shape=size, name='caes_ene_max_slack'),
+                              'ene_min_slack': cvx.Variable(shape=size, name='caes_ene_min_slack'),
+                              'dis_max_slack': cvx.Variable(shape=size, name='caes_dis_max_slack'),
+                              'dis_min_slack': cvx.Variable(shape=size, name='caes_dis_min_slack'),
+                              'ch_max_slack': cvx.Variable(shape=size, name='caes_ch_max_slack'),
+                              'ch_min_slack': cvx.Variable(shape=size, name='caes_ch_min_slack')})
         if self.incl_binary:
-            self.variable_names.update(['caes_on_c', 'caes_on_d'])
-            variables.update({'caes_on_c': cvx.Variable(shape=size, boolean=True, name='caes_on_c'),
-                              'caes_on_d': cvx.Variable(shape=size, boolean=True, name='caes_on_d')})
+            self.variable_names.update(['on_c', 'on_d'])
+            variables.update({'on_c': cvx.Variable(shape=size, boolean=True, name='caes_on_c'),
+                              'on_d': cvx.Variable(shape=size, boolean=True, name='caes_on_d')})
             if self.incl_startup:
-                self.variable_names.update(['bat_start_c', 'bat_start_d'])
-                variables.update({'caes_start_c': cvx.Variable(shape=size, name='caes_start_c'),
-                                  'caes_start_d': cvx.Variable(shape=size, name='caes_start_d')})
+                self.variable_names.update(['start_c', 'start_d'])
+                variables.update({'start_c': cvx.Variable(shape=size, name='caes_start_c'),
+                                  'start_d': cvx.Variable(shape=size, name='caes_start_d')})
 
         variables.update(self.optimization_variables)
 
@@ -140,19 +140,20 @@ class CAESSizing(storagevet.CAESTech):
             pertaining to this instance
 
         """
-        results = storagevet.CAESTech.timeseries_report(self)
-        results[self.name + ' CAES Discharge (kW)'] = self.variables['caes_dis']
-        results[self.name + ' CAES Charge (kW)'] = self.variables['caes_ch']
-        results[self.name + ' CAES Power (kW)'] = self.variables['caes_dis'] - self.variables['caes_ch']
-        results[self.name + ' CAES State of Energy (kWh)'] = self.variables['caes_ene']
+
+        results = pd.DataFrame(index=self.variables.index)
+        results[self.name + ' Discharge (kW)'] = self.variables['dis']
+        results[self.name + ' Charge (kW)'] = self.variables['ch']
+        results[self.name + ' Power (kW)'] = self.variables['dis'] - self.variables['ch']
+        results[self.name + ' State of Energy (kWh)'] = self.variables['ene']
 
         try:
             energy_rate = self.ene_max_rated.value
         except AttributeError:
             energy_rate = self.ene_max_rated
 
-        results['CAES SOC (%)'] = self.variables['caes_ene'] / energy_rate
-        results['CAES Fuel Price ($)'] = self.fuel_price
+        results[' SOC (%)'] = self.variables['ene'] / energy_rate
+        results[' Fuel Price ($)'] = self.fuel_price
 
         return results
 
