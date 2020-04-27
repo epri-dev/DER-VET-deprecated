@@ -70,9 +70,11 @@
 		<sr_max_ramp_rate cba="n" min="0.0" type="float" />
 		<fr_max_ramp_rate cba="n" min="0.0" type="float" />
 		<startup_time cba="n" min="0" type="int" />
+		<lag_time cba="n" min="0" type="int" />
 	</ControllableLoad>
 	<PV type="intermittentresource">
 		<startup_time cba="n" min="0" type="int" />
+		<lag_time cba="n" min="0" type="int" />
 		<name cba="n" type="string" />
 		<nsr_response_time cba="n" min="0" type="int" />
 		<sr_response_time cba="n" min="0" type="int" />
@@ -102,6 +104,7 @@
 		<fr_max_ramp_rate cba="n" min="0.0" type="float" />
 		<min_power cba="n" min="0.0" type="float" />
 		<startup_time cba="n" min="0" type="int" />
+		<lag_time cba="n" min="0" type="int" />
 		<efficiency cba="n" min="0.0" type="float" />
 		<fuel_cost cba="y" min="0.0" type="float" />
 		<variable_om_cost cba="y" min="0.0" type="float" />
@@ -116,6 +119,7 @@
 	</ICE>
 	<Battery type="storage">
 		<startup_time cba="n" min="0" type="int" />
+		<lag_time cba="n" min="0" type="int" />
 		<name cba="n" type="string" />
 		<nsr_response_time cba="n" min="0" type="int" />
 		<sr_response_time cba="n" min="0" type="int" />
@@ -153,6 +157,7 @@
 	</Battery>
 	<CAES type="storage">
 		<startup_time cba="n" min="0" type="int" />
+		<lag_time cba="n" min="0" type="int" />
 		<name type="string" />
 		<nsr_response_time cba="n" min="0" type="int" />
 		<sr_response_time cba="n" min="0" type="int" />

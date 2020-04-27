@@ -220,6 +220,12 @@
             <Value>0</Value>
             <Sensitivity_Parameters>nan</Sensitivity_Parameters>
         </startup_time>
+        <lag_time analysis="no">
+            <Value>0</Value>
+            <Sensitivity_Parameters>nan</Sensitivity_Parameters>
+            <Type>int</Type>
+            <Coupled>None</Coupled>
+        </lag_time>
         <ccost analysis="no">
             <Type>float</Type>
             <Coupled>None</Coupled>
@@ -439,6 +445,12 @@
             <Value>0</Value>
             <Sensitivity_Parameters>nan</Sensitivity_Parameters>
         </startup_time>
+        <lag_time analysis="no">
+            <Value>0</Value>
+            <Sensitivity_Parameters>nan</Sensitivity_Parameters>
+            <Type>int</Type>
+            <Coupled>None</Coupled>
+        </lag_time>
         <inv_max analysis="no">
             <Type>float</Type>
             <Coupled>None</Coupled>
@@ -592,6 +604,12 @@
             <Value>0</Value>
             <Sensitivity_Parameters>nan</Sensitivity_Parameters>
         </startup_time>
+        <lag_time analysis="no">
+            <Value>0</Value>
+            <Sensitivity_Parameters>nan</Sensitivity_Parameters>
+            <Type>int</Type>
+            <Coupled>None</Coupled>
+        </lag_time>
         <efficiency analysis="no">
             <Type>float</Type>
             <Coupled>None</Coupled>
