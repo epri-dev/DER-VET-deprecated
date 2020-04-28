@@ -155,6 +155,11 @@ class CAESSizing(storagevet.CAESTech):
         results[' SOC (%)'] = self.variables['ene'] / energy_rate
         results[' Fuel Price ($)'] = self.fuel_price
 
+        # to be removed later, just for testing start_c and start_d
+        if self.incl_startup:
+            results[self.name + ' Start_d'] = self.variables['start_d']
+            results[self.name + ' Start_c'] = self.variables['start_c']
+
         return results
 
 
