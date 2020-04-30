@@ -87,6 +87,7 @@
 		<rated_capacity cba="n" min="0.0" type="float" />
 		<cost_per_kW cba="y" min="0.0" type="float" />
 		<grid_charge allowed_values="1|0" cba="n" type="bool" />
+		<grid_charge_penalty min="0" type="float" />
 		<loc allowed_values="ac|dc" cba="n" type="string" />
 		<construction_date cba="n" type="Timestamp" />
 		<operation_date cba="n" type="Timestamp" />
