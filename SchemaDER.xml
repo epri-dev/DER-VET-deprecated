@@ -22,6 +22,10 @@
 		<CombinedMarket allowed_values="1|0" cba="n" type="bool" />
 		<duration cba="n" max="24" min="0.0" type="float" />
 	</FR>
+	<FlexR type="service">
+		<growth cba="n" max="100.0" min="0.0" type="float" />
+		<CombinedMarket allowed_values="1|0" cba="n" type="bool" />
+	</FlexR>
 	<SR type="service">
 		<growth cba="n" max="100.0" min="0.0" type="float" />
 		<duration cba="n" max="24" min="0.0" type="float" />
