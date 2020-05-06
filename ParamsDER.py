@@ -129,6 +129,7 @@ class ParamsDER(Params):
         super().__init__()
         self.Reliability = self.read_and_validate('Reliability')
         self.Load = self.read_and_validate('ControllableLoad')
+        self.FlexR = self.read_and_validate('FlexR')
 
     @classmethod
     def cba_template_struct(cls):
@@ -440,8 +441,30 @@ class ParamsDER(Params):
         """
         super().prepare_services()
 
+        timeseries_columns = self.Scenario['time_series'].columns
+        time_series = self.Scenario['time_series']
+
         if self.Reliability is not None:
             self.Reliability["dt"] = self.Scenario["dt"]
-            self.Reliability.update({'critical load': self.Scenario['time_series'].loc[:, 'Critical Load (kW)']})
+            if 'Critical Load (kW)' not in timeseries_columns:
+                e_logger.error('Error: Please include Critical load for Reliability service.')
+                raise Exception("Missing 'Critical Load (kW)' from time-series input")
+            self.Reliability.update({'critical load': time_series.loc[:, 'Critical Load (kW)']})
+
+        if self.FlexR is not None:
+            self.FlexR["dt"] = self.Scenario["dt"]
+            if 'FlexR Forecasted Movement (kW)' not in timeseries_columns:
+                e_logger.error('Error: Please include Forecasted Movement for Flexible Ramping market service.')
+                raise Exception("Missing 'FlexR Forecasted Movement (kW)' from time-series input")
+            self.FlexR.update({'forecasted_movement': time_series.loc[:, 'FlexR Forecasted Movement (kW)']})
+
+            if self.FlexR['CombinedMarket']:
+                self.FlexR.update({'flexr_up_price': np.divide(time_series.loc[:, 'FlexR Up Price ($/kW)'], 2),
+                                   'flexr_do_price': np.divide(time_series.loc[:, 'FlexR Down Price ($/kW)'], 2),
+                                   'energy_price': time_series.loc[:, 'DA Price ($/kWh)']})
+            else:
+                self.FlexR.update({'flexr_up_price': time_series.loc[:, 'FlexR Up Price ($/kW)'],
+                                   'flexr_do_price': time_series.loc[:, 'FlexR Down Price ($/kW)'],
+                                   'energy_price': time_series.loc[:, 'DA Price ($/kWh)']})
 
         u_logger.info("Successfully prepared the value-stream (services)")

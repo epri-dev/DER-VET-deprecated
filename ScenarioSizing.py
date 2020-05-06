@@ -96,6 +96,7 @@ class ScenarioSizing(Scenario):
                 new_gen = tech_func(gen, inputs)
                 new_gen.estimate_year_data(self.opt_years, self.frequency)
                 self.technologies[gen] = new_gen
+        u_logger.info("Finished adding generators...")
 
         load_action_map = {
             'Load': ControllableLoad
@@ -105,7 +106,7 @@ class ScenarioSizing(Scenario):
             load_object = load_action_map['Load'](load_inputs)
             load_object.estimate_year_data(self.opt_years, self.frequency)
             self.technologies['Load'] = load_object
-        u_logger.info("Finished adding generators...")
+        u_logger.info("Finished adding load technologies...")
 
         self.sizing_optimization = self.check_if_sizing_ders()
 
