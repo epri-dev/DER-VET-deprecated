@@ -20,6 +20,7 @@ from TechnologiesDER.CAESSizing import CAESSizing
 from TechnologiesDER.CurtailPVSizing import CurtailPVSizing
 from TechnologiesDER.ICESizing import ICESizing
 from ValueStreamsDER.Reliability import Reliability
+from ValueStreamsDER.FlexibleRamping import FlexibleRamping
 from TechnologiesDER.LoadControllable import ControllableLoad
 
 from storagevet.Scenario import Scenario
@@ -47,6 +48,7 @@ class ScenarioSizing(Scenario):
         Scenario.__init__(self, input_tree)
 
         self.predispatch_service_inputs_map.update({'Reliability': input_tree.Reliability})
+        self.service_input_map.update({'FlexR': input_tree.FlexR})
 
         self.sizing_optimization = False
 
@@ -128,6 +130,14 @@ class ScenarioSizing(Scenario):
             new_service.estimate_year_data(self.opt_years, self.frequency)
             self.predispatch_services['Reliability'] = new_service
             self.predispatch_service_inputs_map.pop('Reliability')
+
+        if self.service_input_map['FlexR']:
+            u_logger.info("Using: Flexible Ramping")
+            inputs = self.service_input_map['FlexR']
+            new_service = FlexibleRamping(inputs, self.technologies, self.dt)
+            new_service.estimate_year_data(self.opt_years, self.frequency)
+            self.services['FlexR'] = new_service
+            self.service_input_map.pop('FlexR')
 
         super().add_services()
 
