@@ -53,8 +53,6 @@ class ICESizing(storagevet.ICE):
         ice_gen = variables['ice_gen']
         on_ice = variables['on_ice']
 
-        # take only the first constraint from parent class - second will cause a DCP error, so we add other constraints here to
-        # cover that constraint
         constraint_list = [storagevet.ICE.objective_constraints(self, variables, mask, reservations, mpc_ene)[0]]
 
         constraint_list += [cvx.NonPos(ice_gen - cvx.multiply(self.rated_power * self.n_max, on_ice))]
@@ -62,6 +60,15 @@ class ICESizing(storagevet.ICE):
 
         constraint_list += [cvx.NonPos(self.n_min - self.n)]
         constraint_list += [cvx.NonPos(self.n - self.n_max)]
+
+        if self.incl_startup:
+            start_gen = variables['start_gen']
+            # constraint_list += [cvx.NonPos(-self.min_started_generators)]
+            # constraint_list += [cvx.NonPos(self.min_started_generators - self.n)]
+            # constraint_list += [cvx.NonPos(self.min_started_generators - self.n_max)]
+            constraint_list += [cvx.NonPos(start_gen - self.n)]
+            constraint_list += [cvx.NonPos(start_gen - cvx.multiply(self.n_max, on_ice))]
+        # TODO: Problem is still unbounded when there is sizing n variables and start_gen variable for startup costs
 
         return constraint_list
 
