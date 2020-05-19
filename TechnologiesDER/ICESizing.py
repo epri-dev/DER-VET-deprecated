@@ -53,9 +53,17 @@ class ICESizing(storagevet.ICE):
         ice_gen = variables['ice_gen']
         on_ice = variables['on_ice']
 
-        constraint_list = [storagevet.ICE.objective_constraints(self, variables, mask, reservations, mpc_ene)[0]]
+        # Note: previous constraints from parent class ICE might lead to variable "start_gen" being unbounded for
+        #  startup cost consideration when n is a sized variable
+        # constraint_list = [storagevet.ICE.objective_constraints(self, variables, mask, reservations, mpc_ene)[0]]
 
+        constraint_list = []
+        constraint_list += [cvx.NonPos(cvx.multiply(self.p_min * self.n_min, on_ice) - ice_gen)]
         constraint_list += [cvx.NonPos(ice_gen - cvx.multiply(self.rated_power * self.n_max, on_ice))]
+
+        # these 2 constraints below might be optional, but they are kept here to prevent the edge cases to produce
+        # unwanted results
+        constraint_list += [cvx.NonPos(self.n * self.p_min - ice_gen)]
         constraint_list += [cvx.NonPos(ice_gen - self.n * self.rated_power)]
 
         constraint_list += [cvx.NonPos(self.n_min - self.n)]
@@ -63,12 +71,15 @@ class ICESizing(storagevet.ICE):
 
         if self.incl_startup:
             start_gen = variables['start_gen']
-            # constraint_list += [cvx.NonPos(-self.min_started_generators)]
-            # constraint_list += [cvx.NonPos(self.min_started_generators - self.n)]
-            # constraint_list += [cvx.NonPos(self.min_started_generators - self.n_max)]
-            constraint_list += [cvx.NonPos(start_gen - self.n)]
-            constraint_list += [cvx.NonPos(start_gen - cvx.multiply(self.n_max, on_ice))]
-        # TODO: Problem is still unbounded when there is sizing n variables and start_gen variable for startup costs
+            # startup variables are positive
+            constraint_list += [cvx.NonPos(-start_gen)]
+
+            self.min_started_generators = (ice_gen - self.p_min) / self.rated_power
+
+            # difference between binary variables determine if started up in previous interval
+            constraint_list += [cvx.NonPos((cvx.diff(self.min_started_generators)) - start_gen[1:])]
+            # this takes care of the first time-step for start_gen
+            constraint_list += [cvx.NonPos(self.min_started_generators[0] - start_gen[0])]
 
         return constraint_list
 
