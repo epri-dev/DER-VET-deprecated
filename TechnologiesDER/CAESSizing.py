@@ -100,7 +100,7 @@ class CAESSizing(storagevet.CAESTech):
 
     def sizing_summary(self):
         """
-        TODO: CAESSizing is waiting to be implemented, it is currently mimicking BatterySizing's method
+        TODO: Sizing for CAES has not yet been discussed, it is currently mimicking BatterySizing's method
 
         Returns: A datafram indexed by the terms that describe this DER's size and captial costs.
 
@@ -152,13 +152,15 @@ class CAESSizing(storagevet.CAESTech):
         except AttributeError:
             energy_rate = self.ene_max_rated
 
-        results[' SOC (%)'] = self.variables['ene'] / energy_rate
-        results[' Fuel Price ($)'] = self.fuel_price
+        results[self.name + ' SOC (%)'] = self.variables['ene'] / energy_rate
+        results[self.name + ' Natural Gas Price ($)'] = self.natural_gas_price
 
-        # to be removed later, just for testing start_c and start_d
+        # if unnecessary, this can be removed later, I used it just for testing start_c and start_d
         if self.incl_startup:
             results[self.name + ' Start_d'] = self.variables['start_d']
             results[self.name + ' Start_c'] = self.variables['start_c']
+            results[self.name + ' On_d (y/n)'] = self.variables['on_d']
+            results[self.name + ' On_c (y/n)'] = self.variables['on_c']
 
         return results
 
