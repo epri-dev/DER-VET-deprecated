@@ -25,7 +25,15 @@
 	<FlexR type="service">
 		<growth cba="n" max="100.0" min="0.0" type="float" />
 		<CombinedMarket allowed_values="1|0" cba="n" type="bool" />
+		<ku max="1.0" min="0.0" type="float" />
+		<kd max="1.0" min="0.0" type="float" />
 	</FlexR>
+	<LF type="service">
+		<growth max="100.0" min="0.0" type="float" />
+		<CombinedMarket type="bool" allowed_values="1|0"/>
+		<ku max="1.0" min="0.0" type="float" />
+		<kd max="1.0" min="0.0" type="float" />
+	</LF>
 	<SR type="service">
 		<growth cba="n" max="100.0" min="0.0" type="float" />
 		<duration cba="n" max="24" min="0.0" type="float" />

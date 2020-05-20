@@ -398,6 +398,11 @@ class ParamsDER(Params):
         if self.Load is not None and self.Scenario['incl_site_load'] != 1:
             e_logger.error('Error: incl_site_load should be = 1')
             return False
+
+        if self.FlexR is not None and sizing_optimization:
+            e_logger.error('Error: Technology sizing should not be feasible when Flexible Ramping is active.')
+            return False
+
         return super().other_error_checks()
 
     def prepare_scenario(self):

@@ -48,6 +48,8 @@ class FlexibleRamping(storagevet.ValueStream):
 
         self.combined_market = params['CombinedMarket']  # boolean: true if ramp up is equal to ramp down
         self.price_growth = params['growth']
+        self.ku = params['ku']
+        self.kd = params['kd']
 
         # forecasted movement value from time-series input
         self.ramp_load = params['forecasted_movement']
@@ -114,26 +116,23 @@ class FlexibleRamping(storagevet.ValueStream):
         """
         size = sum(mask)
 
-        # TODO: what is equivalent to ku/kd avg in FR/LF to calculate for getting paid in Ramping Up/Down services ?
-        #  as well as interaction between Forecast Movement (its definition?) and Ramping Up/Down reservation capabilities
-
-        # What about price settlement for forecasted_movement power?
+        # TODO: might check for price settlement on forecasted_movement power?
 
         masked_up_price = cvx.Parameter(size, value=self.flexr_up_price.loc[mask].values, name='flexr_up_price')
         masked_do_price = cvx.Parameter(size, value=self.flexr_do_price.loc[mask].values, name='flexr_do_price')
         masked_price = cvx.Parameter(size, value=self.price.loc[mask].values, name='price')
 
         rampup_charge_payment = cvx.sum(variables['flexr_up_c'] * - masked_up_price) * annuity_scalar
-        rampup_charge_settlement = cvx.sum(variables['flexr_up_c'] * - masked_price) * self.dt * self.kru_avg * annuity_scalar
+        rampup_charge_settlement = cvx.sum(variables['flexr_up_c'] * - masked_price) * self.dt * self.ku * annuity_scalar
 
         rampup_dis_payment = cvx.sum(variables['flexr_up_d'] * - masked_up_price) * annuity_scalar
-        rampup_dis_settlement = cvx.sum(variables['flexr_up_d'] * - masked_price) * self.dt * self.kru_avg * annuity_scalar
+        rampup_dis_settlement = cvx.sum(variables['flexr_up_d'] * - masked_price) * self.dt * self.ku * annuity_scalar
 
         rampdown_charge_payment = cvx.sum(variables['flexr_do_c'] * - masked_do_price) * annuity_scalar
-        rampdown_charge_settlement = cvx.sum(variables['flexr_do_c'] * masked_price) * self.dt * self.krd_avg * annuity_scalar
+        rampdown_charge_settlement = cvx.sum(variables['flexr_do_c'] * masked_price) * self.dt * self.kd * annuity_scalar
 
         rampdown_dis_payment = cvx.sum(variables['flexr_do_d'] * - masked_do_price) * annuity_scalar
-        rampdown_dis_settlement = cvx.sum(variables['flexr_do_d'] * masked_price) * self.dt * self.krd_avg * annuity_scalar
+        rampdown_dis_settlement = cvx.sum(variables['flexr_do_d'] * masked_price) * self.dt * self.kd * annuity_scalar
 
         return {'rampup_payment': rampup_charge_payment + rampup_dis_payment,
                 'rampdown_payment': rampdown_charge_payment + rampdown_dis_payment,
@@ -181,7 +180,9 @@ class FlexibleRamping(storagevet.ValueStream):
             A power reservation and a energy reservation array for the optimization window--
             C_max, C_min, D_max, D_min, E_upper, E, and E_lower (in that order)
         """
-        eta = self.storage.rte
+        # Note: self.storage had Load Technologies included when I wrote this, so I need to specify Storage
+        #  for the dictionary, self.storage.rte gave Key Errors
+        eta = self.storage['Storage'].rte
 
         # calculate reservations
         c_max = opt_vars['flexr_do_c']
@@ -189,21 +190,19 @@ class FlexibleRamping(storagevet.ValueStream):
         d_min = opt_vars['flexr_do_d']
         d_max = opt_vars['flexr_up_d']
 
-        # TODO: how do we account for kd_max/min and ku_max/min by using Forecast Movement?
-        # TODO: do we account Forecast Movement Power in energy throughput?
-
         # worst case for upper level of energy throughput
-        e_upper = self.kd_max * self.dt * opt_vars['flexr_do_d'] + self.kd_max * self.dt * opt_vars['flexr_do_c'] * eta - \
-                  self.ku_min * self.dt * opt_vars['flexr_up_d'] - self.ku_min * self.dt * opt_vars['flexr_up_c'] * eta
+        e_upper = self.kd * self.dt * opt_vars['flexr_do_d'] + self.kd * self.dt * opt_vars['flexr_do_c'] * eta - \
+                  self.ku * self.dt * opt_vars['flexr_up_d'] - self.ku * self.dt * opt_vars['flexr_up_c'] * eta
         # energy throughput is result from combination of ene_throughput for
-        # (+ down_discharge + down_charge - up_discharge - up_charge)
-        e = cvx.multiply(self.kd * self.dt, opt_vars['flexr_do_d']) + \
-            cvx.multiply(self.kd * self.dt * eta, opt_vars['flexr_do_c']) - \
-            cvx.multiply(self.ku * self.dt, opt_vars['flexr_up_d']) - \
-            cvx.multiply(self.ku * self.dt * eta, opt_vars['flexr_up_c'])
+        # (+ down_discharge + down_charge - up_discharge - up_charge) + forecast_movement_power (ramp down/up values)
+        e = cvx.multiply(self.dt, opt_vars['flexr_do_d']) + \
+            cvx.multiply(self.dt * eta, opt_vars['flexr_do_c']) - \
+            cvx.multiply(self.dt, opt_vars['flexr_up_d']) - \
+            cvx.multiply(self.dt * eta, opt_vars['flexr_up_c']) + \
+            self.dt * self.rampdown_load[mask].values + self.dt * self.rampup_load[mask].values
         # worst case for lower level of energy throughput
-        e_lower = self.kd_min * self.dt * opt_vars['flexr_do_d'] + self.kd_min * self.dt * opt_vars['flexr_do_c'] * eta - \
-                  self.ku_max * self.dt * opt_vars['flexr_up_d'] - self.ku_max * self.dt * opt_vars['flexr_up_c'] * eta
+        e_lower = self.kd * self.dt * opt_vars['flexr_do_d'] + self.kd * self.dt * opt_vars['flexr_do_c'] * eta - \
+                  self.ku * self.dt * opt_vars['flexr_up_d'] - self.ku * self.dt * opt_vars['flexr_up_c'] * eta
 
         # save reservation for optmization window
         self.e.append(e)
@@ -242,3 +241,107 @@ class FlexibleRamping(storagevet.ValueStream):
                 source_data = self.flexr_do_price[self.flexr_do_price.index.year == source_year.year]  # use source year data
                 new_data = Lib.apply_growth(source_data, self.price_growth, source_year, yr, frequency)
                 self.flexr_do_price = pd.concat([self.flexr_do_price, new_data], sort=True)  # add to existing
+
+    def timeseries_report(self):
+        """ Summaries the optimization results for this Value Stream.
+
+        Returns: A timeseries dataframe with user-friendly column headers that summarize the results
+            pertaining to this instance
+
+        """
+        report = pd.DataFrame(index=self.price.index)
+        report.loc[:, "FlexR Energy Throughput with Forecast Movement (kWh)"] = self.ene_results['ene']
+        report.loc[:, "FlexR Energy Throughput Up (Charging) (kWh)"] = self.ku * self.dt * self.storage.rte * self.variables['flexr_up_c']
+        report.loc[:, "FlexR Energy Throughput Up (Discharging) (kWh)"] = self.ku * self.dt * self.variables['flexr_up_d']
+        report.loc[:, "FlexR Energy Throughput Down (Charging) (kWh)"] = self.kd * self.dt * self.storage.rte * self.variables['flexr_do_c']
+        report.loc[:, "FlexR Energy Throughput Down (Discharging) (kWh)"] = self.kd * self.dt * self.variables['flexr_do_d']
+        report.loc[:, "FlexR Energy Settlement Price Signal ($/kWh)"] = self.price
+        report.loc[:, 'FlexR Up (Charging) (kW)'] = self.variables['flexr_up_c']
+        report.loc[:, 'FlexR Up (Discharging) (kW)'] = self.variables['flexr_up_d']
+        report.loc[:, 'FlexR Up Price Signal ($/kW)'] = self.flexr_up_price
+        report.loc[:, 'FlexR Down (Charging) (kW)'] = self.variables['flexr_do_c']
+        report.loc[:, 'FlexR Down (Discharging) (kW)'] = self.variables['flexr_do_d']
+        report.loc[:, 'FlexR Down Price Signal ($/kW)'] = self.flexr_do_price
+
+        return report
+
+    def proforma_report(self, opt_years, results):
+        """ Calculates the proforma that corresponds to participation in this value stream
+
+        Args:
+            opt_years (list): list of years the optimization problem ran for
+            results (DataFrame): DataFrame with all the optimization variable solutions
+
+        Returns: A tuple of a DateFrame (of with each year in opt_year as the index and the corresponding
+        value this stream provided), a list (of columns that remain zero), and a list (of columns that
+        retain a constant value over the entire project horizon).
+
+            Creates a dataframe with only the years that we have data for. Since we do not label the column,
+            it defaults to number the columns with a RangeIndex (starting at 0) therefore, the following
+            DataFrame has only one column, labeled by the int 0
+
+        """
+        proforma, _, _ = ValueStream.proforma_report(self, opt_years, results)
+
+        flexr_up = results.loc[:, 'FlexR Up (Charging) (kW)'] + results.loc[:, 'FlexR Up (Discharging) (kW)']
+        flexr_down = results.loc[:, 'FlexR Down (Charging) (kW)'] + results.loc[:, 'FlexR Down (Discharging) (kW)']
+
+        energy_throughput = - results.loc[:, "FlexR Energy Throughput Down (Discharging) (kWh)"] \
+                            - results.loc[:, "FlexR Energy Throughput Down (Charging) (kWh)"] / self.storage.rte \
+                            + results.loc[:, "FlexR Energy Throughput Up (Discharging) (kWh)"] \
+                            + results.loc[:, "FlexR Energy Throughput Up (Charging) (kWh)"] / self.storage.rte
+        energy_through_prof = np.multiply(energy_throughput,
+                                          results.loc[:, "FlexR Energy Settlement Price Signal ($/kWh)"])
+
+        flexr_up_prof = np.multiply(flexr_up, self.flexr_up_price)
+        flexr_down_prof = np.multiply(flexr_down, self.flexr_do_price)
+
+        flexr_results = pd.DataFrame({'Energy': energy_through_prof,
+                                    'FlexR Up': flexr_up_prof,
+                                    'FlexR Down': flexr_down_prof}, index=results.index)
+        for year in opt_years:
+            year_monthly = flexr_results[flexr_results.index.year == year]
+            proforma.loc[pd.Period(year=year, freq='y'), 'FlexR Energy Throughput'] = year_monthly['Energy'].sum()
+            proforma.loc[pd.Period(year=year, freq='y'), 'FlexR Up'] = year_monthly['FlexR Up'].sum()
+            proforma.loc[pd.Period(year=year, freq='y'), 'FlexR Down'] = year_monthly['FlexR Down'].sum()
+
+        return proforma, None, None
+
+    def update_price_signals(self, monthly_data, time_series_data):
+        """ Updates attributes related to price signals with new price signals that are saved in
+        the arguments of the method. Only updates the price signals that exist, and does not require all
+        price signals needed for this service.
+
+        Args:
+            monthly_data (DataFrame): monthly data after pre-processing
+            time_series_data (DataFrame): time series data after pre-processing
+
+        """
+        if self.combined_market:
+            try:
+                fr_price = time_series_data.loc[:, 'LF Price ($/kW)']
+            except KeyError:
+                pass
+            else:
+                self.price_lf_up = np.divide(fr_price, 2)
+                self.price_lf_do = np.divide(fr_price, 2)
+
+            try:
+                self.price = time_series_data.loc[:, 'DA Price ($/kWh)']
+            except KeyError:
+                pass
+        else:
+            try:
+                self.price_lf_do = time_series_data.loc[:, 'LF Down Price ($/kW)']
+            except KeyError:
+                pass
+
+            try:
+                self.price_lf_up = time_series_data.loc[:, 'LF Up Price ($/kW)']
+            except KeyError:
+                pass
+
+            try:
+                self.price = time_series_data.loc[:, 'DA Price ($/kWh)']
+            except KeyError:
+                pass
