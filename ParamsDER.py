@@ -127,6 +127,7 @@ class ParamsDER(Params):
         """ Initialize these following attributes of the empty Params class object.
         """
         super().__init__()
+        self.CHP = self.read_and_validate('CHP')
         self.Reliability = self.read_and_validate('Reliability')
         self.Load = self.read_and_validate('ControllableLoad')
 
@@ -145,6 +146,7 @@ class ParamsDER(Params):
         template['ders_values'] = {
             'Battery': cls.read_and_validate_cba('Battery'),
             'PV': cls.read_and_validate_cba('PV'),  # cost_per_kW (and then recalculate capex)
+            'CHP': cls.read_and_validate_cba('CHP'),
             'ICE': cls.read_and_validate_cba('ICE'),  # fuel_price,
             'Load': cls.read_and_validate_cba('Load')
         }
@@ -411,8 +413,6 @@ class ParamsDER(Params):
                              'there is a possiblity that the CVXPY will throw a "DCPError". This will resolve ' +
                              'by turning the binary formulation flag off.')
 
-        u_logger.info("Successfully prepared the Scenario and some Finance")
-
     def prepare_finance(self):
         """ Interprets user given data and prepares it for Finance.
 
@@ -424,6 +424,9 @@ class ParamsDER(Params):
     def prepare_technology(self):
         time_series = self.Scenario['time_series']
         timeseries_columns = time_series.columns
+        monthly_data = self.Scenario['monthly_data']
+        freq = self.Scenario['frequency']
+
         if self.Load is not None:
             # check to make sure data was included
             if 'Site Load (kW)' not in timeseries_columns:
@@ -432,6 +435,19 @@ class ParamsDER(Params):
             self.Load.update({'dt': self.Scenario['dt'],
                               'growth': self.Scenario['def_growth'],
                               'site_load': time_series.loc[:, 'Site Load (kW)']})
+
+        if self.CHP is not None:
+            # add time series, monthly data, and any scenario case parameters to CHP parameter dictionary
+            if 'Natural Gas Price ($/MillionBTU)' not in monthly_data.columns:
+                e_logger.error('Error: Please include a monthly natural gas price in monthly data input.')
+                raise Exception("Missing 'Natural Gas Price ($/MillionBTU)' from monthly data input")
+            if 'Thermal Load (BTU/hr)' not in timeseries_columns:
+                e_logger.error('Error: Please include a Thermal Load in time series data input.')
+                raise Exception("Missing 'Thermal Load (BTU/hr)' from timeseries data input")
+            self.CHP.update({'thermal_load': time_series.loc[:, 'Thermal Load (BTU/hr)'],
+                             'natural_gas_price': self.monthly_to_timeseries(freq, self.Scenario['monthly_data'].loc[:, ['Natural Gas Price ($/MillionBTU)']]),
+                             'dt': self.Scenario['dt']})
+
         super().prepare_technology()
 
     def prepare_services(self):

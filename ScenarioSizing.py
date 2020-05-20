@@ -13,12 +13,11 @@ __email__ = ['hnathwani@epri.com', 'mevans@epri.com']
 __version__ = 'beta'  # beta version
 
 
-import storagevet
-
 from TechnologiesDER.BatterySizing import BatterySizing
 from TechnologiesDER.CAESSizing import CAESSizing
 from TechnologiesDER.CurtailPVSizing import CurtailPVSizing
 from TechnologiesDER.ICESizing import ICESizing
+from TechnologiesDER.CHP import CHP
 from ValueStreamsDER.Reliability import Reliability
 from TechnologiesDER.LoadControllable import ControllableLoad
 
@@ -46,11 +45,10 @@ class ScenarioSizing(Scenario):
         """
         Scenario.__init__(self, input_tree)
 
+        self.technology_inputs_map.update({'CHP': input_tree.CHP})
         self.predispatch_service_inputs_map.update({'Reliability': input_tree.Reliability})
-
         self.sizing_optimization = False
-
-        u_logger.info("ScenarioDER initialized ...")
+        u_logger.info("ScenarioDER (ScenarioSizing) initialized ...")
 
     def check_if_sizing_ders(self):
         """ This method will iterate through the initialized DER instances and return a logical OR of all of their
@@ -86,7 +84,8 @@ class ScenarioSizing(Scenario):
 
         generator_action_map = {
             'PV': CurtailPVSizing,
-            'ICE': ICESizing
+            'ICE': ICESizing,
+            'CHP': CHP
         }
 
         for gen in generator_action_map.keys():
@@ -107,6 +106,7 @@ class ScenarioSizing(Scenario):
             self.technologies['Load'] = load_object
         u_logger.info("Finished adding generators...")
 
+        self.active_objects['distributed energy resources'] = [self.technologies.keys()]
         self.sizing_optimization = self.check_if_sizing_ders()
 
     def add_services(self):

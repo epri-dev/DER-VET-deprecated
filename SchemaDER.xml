@@ -54,6 +54,7 @@
 		<rated_capacity cba="n" min="0.0" type="float" />
 		<cost_per_kW cba="y" min="0.0" type="float" />
 		<grid_charge allowed_values="1|0" cba="n" type="bool" />
+		<grid_charge_penalty min="0" type="float" />
 		<loc allowed_values="ac|dc" cba="n" type="string" />
 		<construction_date cba="n" type="Timestamp" />
 		<operation_date cba="n" type="Timestamp" />
@@ -140,6 +141,21 @@
 		<p_start_dis min="0" type="float" />
 		<duration_max min="0" type="float" optional="y"/>
 	</CAES>
+	<CHP type="generator">
+		<name type="string" />
+		<electric_heat_ratio min="0.0" type="float" />
+		<heat_rate min="0.0" type="float" />
+		<electric_power_capacity min="0.0" type="float" />
+		<ccost min="0.0" type="float" />
+		<ccost_kW min="0.0" type="float" />
+		<OMexpenses min="0.0" type="float" />
+		<electric_ramp_rate min="0.0" type="float" />
+		<startup type="bool" allowed_values="1|0" />
+		<p_startup min="0.0" type="float" />
+		<startup_time min="0.0" type="int" />
+		<nsr_response_time min="0" type="int" />
+		<sr_response_time min="0" type="int" />
+	</CHP>
 	<Scenario type="scenario">
 		<monthly_data_filename cba="y" type="string" />
 		<time_series_filename cba="y" type="string" />

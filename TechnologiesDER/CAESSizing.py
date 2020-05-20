@@ -162,7 +162,13 @@ class CAESSizing(storagevet.CAESTech):
 
         return results
 
+    def being_sized(self):
+        """ checks itself to see if this instance is being sized
 
+        Returns: true if being sized, false if not being sized
+
+        """
+        return bool(len(self.size_constraints))
 
 
 
