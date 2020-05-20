@@ -53,6 +53,7 @@ class FlexibleRamping(storagevet.ValueStream):
         self.ramp_load = params['forecasted_movement']
         self.rampup_load = pd.Series(index=self.ramp_load.index)
         self.rampdown_load = pd.Series(index=self.ramp_load.index)
+        # split ramp_load into rampup_load and rampdown_load as rampup is positive load and rampdown is negative load
         for index, value in self.ramp_load.items():
             if value >= 0:
                 self.rampup_load[index] = value
@@ -68,6 +69,11 @@ class FlexibleRamping(storagevet.ValueStream):
         # max/min resource uncertainties in upward/downward direction
         self.variable_names = {'flexr_up_c', 'flexr_do_c', 'flexr_up_d', 'flexr_do_d'}
         self.variables = pd.DataFrame(columns=self.variable_names)
+
+        self.dt = dt
+        if self.dt != 0.25 or self.dt != (5/60):
+            e_logger.warning("WARNING: using Flexible Ramping Service and energy-dispatch interval is not 5 or 15 min.")
+            u_logger.warning("WARNING: using Flexible Ramping Service and energy-dispatch interval is not 5 or 15 min.")
 
     @staticmethod
     def add_vars(size):
@@ -108,8 +114,10 @@ class FlexibleRamping(storagevet.ValueStream):
         """
         size = sum(mask)
 
-        # TODO: need to be clear about getting paid for Ramping Up/Down services
+        # TODO: what is equivalent to ku/kd avg in FR/LF to calculate for getting paid in Ramping Up/Down services ?
         #  as well as interaction between Forecast Movement (its definition?) and Ramping Up/Down reservation capabilities
+
+        # What about price settlement for forecasted_movement power?
 
         masked_up_price = cvx.Parameter(size, value=self.flexr_up_price.loc[mask].values, name='flexr_up_price')
         masked_do_price = cvx.Parameter(size, value=self.flexr_do_price.loc[mask].values, name='flexr_do_price')
@@ -118,18 +126,94 @@ class FlexibleRamping(storagevet.ValueStream):
         rampup_charge_payment = cvx.sum(variables['flexr_up_c'] * - masked_up_price) * annuity_scalar
         rampup_charge_settlement = cvx.sum(variables['flexr_up_c'] * - masked_price) * self.dt * self.kru_avg * annuity_scalar
 
-        rampup_dis_payment = cvx.sum(variables['regu_d'] * -p_regu) * annuity_scalar
-        rampup_dis_settlement = cvx.sum(variables['regu_d'] * -p_ene) * self.dt * self.kru_avg * annuity_scalar
+        rampup_dis_payment = cvx.sum(variables['flexr_up_d'] * - masked_up_price) * annuity_scalar
+        rampup_dis_settlement = cvx.sum(variables['flexr_up_d'] * - masked_price) * self.dt * self.kru_avg * annuity_scalar
 
-        rampdown_charge_payment = cvx.sum(variables['regd_c'] * -p_regd) * annuity_scalar
-        rampdown_charge_settlement = cvx.sum(variables['regd_c'] * p_ene) * self.dt * self.krd_avg * annuity_scalar
+        rampdown_charge_payment = cvx.sum(variables['flexr_do_c'] * - masked_do_price) * annuity_scalar
+        rampdown_charge_settlement = cvx.sum(variables['flexr_do_c'] * masked_price) * self.dt * self.krd_avg * annuity_scalar
 
-        rampdown_dis_payment = cvx.sum(variables['regd_d'] * -p_regd) * annuity_scalar
-        rampdown_dis_settlement = cvx.sum(variables['regd_d'] * p_ene) * self.dt * self.krd_avg * annuity_scalar
+        rampdown_dis_payment = cvx.sum(variables['flexr_do_d'] * - masked_do_price) * annuity_scalar
+        rampdown_dis_settlement = cvx.sum(variables['flexr_do_d'] * masked_price) * self.dt * self.krd_avg * annuity_scalar
 
         return {'rampup_payment': rampup_charge_payment + rampup_dis_payment,
                 'rampdown_payment': rampdown_charge_payment + rampdown_dis_payment,
-                'flexR_energy_settlement': rampup_dis_settlement + rampdown_dis_settlement + rampup_charge_settlement + rampdown_charge_settlement}
+                'flexR_energy_settlement': rampup_dis_settlement + rampdown_dis_settlement +
+                                           rampup_charge_settlement + rampdown_charge_settlement}
+
+    def objective_constraints(self, variables, mask, load, generation, reservations=None):
+        """Default build constraint list method. Used by services that do not have constraints.
+
+        Args:
+            variables (Dict): dictionary of variables being optimized
+            mask (DataFrame): A boolean array that is true for indices corresponding to time_series data included
+                in the subs data set
+            load (list, Expression): the sum of load within the system
+            generation (list, Expression): the sum of generation within the system for the subset of time
+                being optimized
+            reservations (Dict): power reservations from dispatch services
+
+        Returns:
+            constraint_list (list): list of constraints
+
+        """
+        constraint_list = []
+        constraint_list += [cvx.NonPos(-variables['flexr_up_c'])]
+        constraint_list += [cvx.NonPos(-variables['flexr_do_c'])]
+        constraint_list += [cvx.NonPos(-variables['flexr_up_d'])]
+        constraint_list += [cvx.NonPos(-variables['flexr_do_d'])]
+
+        if self.combined_market:
+            constraint_list += [cvx.Zero(variables['flexr_do_d'] + variables['flexr_do_c']
+                                         - variables['flexr_up_d'] - variables['flexr_up_c'])]
+
+        return constraint_list
+
+    def power_ene_reservations(self, opt_vars, mask):
+        """ Determines power and energy reservations required at the end of each time-step for the service to be provided.
+        Additionally keeps track of the reservations per optimization window so the values maybe accessed later.
+
+        Args:
+            opt_vars (Dict): dictionary of variables being optimized
+            mask (DataFrame): A boolean array that is true for indices corresponding to time_series data included
+                in the subs data set
+
+        Returns:
+            A power reservation and a energy reservation array for the optimization window--
+            C_max, C_min, D_max, D_min, E_upper, E, and E_lower (in that order)
+        """
+        eta = self.storage.rte
+
+        # calculate reservations
+        c_max = opt_vars['flexr_do_c']
+        c_min = opt_vars['flexr_up_c']
+        d_min = opt_vars['flexr_do_d']
+        d_max = opt_vars['flexr_up_d']
+
+        # TODO: how do we account for kd_max/min and ku_max/min by using Forecast Movement?
+        # TODO: do we account Forecast Movement Power in energy throughput?
+
+        # worst case for upper level of energy throughput
+        e_upper = self.kd_max * self.dt * opt_vars['flexr_do_d'] + self.kd_max * self.dt * opt_vars['flexr_do_c'] * eta - \
+                  self.ku_min * self.dt * opt_vars['flexr_up_d'] - self.ku_min * self.dt * opt_vars['flexr_up_c'] * eta
+        # energy throughput is result from combination of ene_throughput for
+        # (+ down_discharge + down_charge - up_discharge - up_charge)
+        e = cvx.multiply(self.kd * self.dt, opt_vars['flexr_do_d']) + \
+            cvx.multiply(self.kd * self.dt * eta, opt_vars['flexr_do_c']) - \
+            cvx.multiply(self.ku * self.dt, opt_vars['flexr_up_d']) - \
+            cvx.multiply(self.ku * self.dt * eta, opt_vars['flexr_up_c'])
+        # worst case for lower level of energy throughput
+        e_lower = self.kd_min * self.dt * opt_vars['flexr_do_d'] + self.kd_min * self.dt * opt_vars['flexr_do_c'] * eta - \
+                  self.ku_max * self.dt * opt_vars['flexr_up_d'] - self.ku_max * self.dt * opt_vars['flexr_up_c'] * eta
+
+        # save reservation for optmization window
+        self.e.append(e)
+        self.e_lower.append(e_lower)
+        self.e_upper.append(e_upper)
+        self.c_max.append(c_max)
+        self.c_min.append(c_min)
+        self.d_max.append(d_max)
+        self.d_min.append(d_min)
+        return [c_max, c_min, d_max, d_min], [e_upper, e, e_lower]
 
     def estimate_year_data(self, years, frequency):
         """ Update variable that hold timeseries data after adding growth data. These method should be called after
