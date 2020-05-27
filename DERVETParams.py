@@ -127,6 +127,7 @@ class ParamsDER(Params):
         super().__init__()
         self.Reliability = self.flatten_tag_id(self.read_and_validate('Reliability'))  # Value Stream
         self.Load = self.read_and_validate('ControllableLoad')  # DER
+        self.CHP = self.read_and_validate('CHP')
 
     @classmethod
     def bad_active_combo(cls):
@@ -154,6 +155,7 @@ class ParamsDER(Params):
             'Battery': cls.read_and_validate_cba('Battery'),
             'CAES': cls.read_and_validate_cba('CAES'),
             'PV': cls.read_and_validate_cba('PV'),  # cost_per_kW (and then recalculate capex)
+            'CHP': cls.read_and_validate_cba('CHP'),
             'ICE': cls.read_and_validate_cba('ICE'),  # fuel_price,
             'Load': cls.read_and_validate_cba('Load')
         }
@@ -200,7 +202,11 @@ class ParamsDER(Params):
                     # did the user mark cba input as active?
                     if cba_value.get('active')[0].lower() == "y" or cba_value.get('active')[0] == "1":
                         # check if you are allowed to input Evaulation value for the give key
-                        if schema_key.get('cba')[0].lower() in ['y', '1']:
+                        cba_allowed = schema_key.get('cba')
+                        if cba_allowed is None or cba_allowed[0].lower() in ['n', '0']:
+                            cls.report_warning('cba not allowed', tag=name, key=key.tag, raise_input_error=False)
+                            continue
+                        else:
                             valuation_entry = None
                             intended_type = key.find('Type').text
                             if key.get('analysis')[0].lower() == 'y' or key.get('analysis')[0].lower() == '1':
@@ -222,8 +228,6 @@ class ParamsDER(Params):
                                 valuation_entry = cls.convert_data_type(key.find('Evaluation').text, intended_type)
                             # save evaluation value OR save a place for the sensitivity value to fill in the dictionary later w/ None
                             dictionary[key.tag] = valuation_entry
-                        else:
-                            cls.report_warning('cba not allowed', tag=name, key=key.tag, raise_input_error=False)
                 # save set of KEYS (in the dictionary) to the TAG that it belongs to (multiple dictionaries if mutliple IDs)
                 tag_data_struct[tag.get('id')] = dictionary
         return tag_data_struct
@@ -380,8 +384,6 @@ class ParamsDER(Params):
                              'there is a possiblity that the CVXPY will throw a "DCPError". This will resolve ' +
                              'by turning the binary formulation flag off.')
 
-        u_logger.info("Successfully prepared the Scenario and some Finance")
-
     def load_finance(self):
         """ Interprets user given data and prepares it for Finance.
 
@@ -403,14 +405,14 @@ class ParamsDER(Params):
                 if not pv_inputs['rated_capacity']:
                     sizing_optimization = True
 
-        if self.ICE is not None:
+        if len(self.ICE):
             # add scenario case parameters to ICE parameter dictionary
             for id_str, ice_input in self.ICE.items():
                 if ice_input['n_min'] != ice_input['n_max']:
                     sizing_optimization = True
                 if ice_input['n_min'] > ice_input['n_max']:
                     self.record_input_error(f'ICE {id_str} must have n_min < n_max')
-        if sizing_optimization and not self.Scenario['n'] == 'year':
+        if sizing_optimization and not self.Scenario['n'] == 'year':  # todo: move to b4 opt set up. w/ other sizing checks --hn
             self.record_input_error('Trying to size without setting the optimization window to \'year\'')
 
         if len(self.Load):
@@ -425,6 +427,22 @@ class ParamsDER(Params):
 
                 load_inputs.update({'dt': self.Scenario['dt'],
                                     'growth': self.Scenario['def_growth']})
+        if len(self.CHP):
+            for id_str, chp_inputs in self.CHP:
+                chp_inputs.update({'dt': self.Scenario['dt']})
+                # add time series, monthly data, and any scenario case parameters to CHP parameter dictionary
+
+                try:
+                    chp_inputs.update({'thermal_load': time_series.loc[:, 'Thermal Load (BTU/hr)']})
+                except KeyError:
+                    self.record_input_error("Missing 'Thermal Load (BTU/hr)' from timeseries data input")
+
+                try:
+                    chp_inputs.update({'natural_gas_price': self.monthly_to_timeseries(self.Scenario['frequency'],
+                                                                                       self.Scenario['monthly_data'].loc[:, ['Natural Gas Price ($/MillionBTU)']])})
+                except KeyError:
+                    self.record_input_error("Missing 'Natural Gas Price ($/MillionBTU)' from monthly data input")
+
         super().load_technology()
 
     def load_services(self):
