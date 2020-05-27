@@ -15,26 +15,29 @@ __email__ = ['egiarta@epri.com', 'mevans@epri.com']
 import cvxpy as cvx
 import numpy as np
 import pandas as pd
-from storagevet.Technology.DER import DER
+from storagevet.Technology.DistributedEnergyResource import DER
+from MicrogridDER.Sizing import Sizing
+from storagevet import Library as Lib
+
 
 # thermal load unit is BTU/h
 BTU_H_PER_KW = 3412.14  # 1kW = 3412.14 BTU/h
 
 
-class CHP(DER):
+class CHP(DER, Sizing):
     """ Combined Heat and Power generation technology system
 
     """
 
-    def __init__(self, name, params):
+    def __init__(self, params):
         """ Initializes a CHP class, inherited from DER class.
 
         Args:
-            name (str): A unique string name for the technology being added, also works as category.
             params (dict): Dict of parameters for initialization
         """
         # create generic generator object
-        DER.__init__(self, params['name'], 'CHP', params)
+        DER.__init__(self, 'CHP', 'Generator', params)
+        Sizing.__init__(self)
 
         # input params, UNITS ARE COMMENTED TO THE RIGHT
         self.electric_heat_ratio = params['electric_heat_ratio']
@@ -46,17 +49,61 @@ class CHP(DER):
         self.OMExpenses = params['OMexpenses']                             # $/MWh
         self.natural_gas_price = params['natural_gas_price']               # $/MillionBTU
         self.thermal_load = params['thermal_load']                         # BTU/hr
-        self.variable_names = {'chp_elec', 'chp_therm', 'chp_on'}
-        self.capital_cost = params['ccost']        # $     (fixed capitol cost)
-        self.ccost_kw = params['ccost_kW']         # $/kW  (capitol cost per kW of electric power capacity)
+        self.variable_names = {'chp_elec', 'chp_therm', 'chp_on', 'udis'}
+        # self.capital_cost = params['ccost']        # $     (fixed capitol cost)
+        # self.ccost_kw = params['ccost_kW']         # $/kW  (capitol cost per kW of electric power capacity)
+        self.capital_cost_function = [params['ccost'], params['ccost_kw']]
 
-    def add_vars(self, size):
+    def get_capex(self) -> cvx.Variable or float:
+        """
+
+        Returns: the capex of this DER
+
+        """
+        return np.dot(self.capital_cost_function, [1, self.electric_power_capacity])
+
+    def grow_drop_data(self, years, frequency, load_growth):
+        """ Adds data by growing the given data OR drops any extra data that might have slipped in.
+        Update variable that hold timeseries data after adding growth data. These method should be called after
+        add_growth_data and before the optimization is run.
+
+        Args:
+            years (List): list of years for which analysis will occur on
+            frequency (str): period frequency of the timeseries data
+            load_growth (float): percent/ decimal value of the growth rate of loads in this simulation
+
+        """
+        self.thermal_load = Lib.fill_extra_data(self.thermal_load, years, load_growth, frequency)
+        self.thermal_load = Lib.drop_extra_data(self.thermal_load, years)
+
+        self.natural_gas_price = Lib.fill_extra_data(self.natural_gas_price, years, 0, frequency)  # TODO: change growth rate of fuel prices (user input?)
+        self.natural_gas_price = Lib.drop_extra_data(self.natural_gas_price, years)
+
+    def discharge_capacity(self):
+        """
+
+        Returns: the maximum discharge that can be attained
+
+        """
+        return self.electric_power_capacity
+
+    def qualifying_capacity(self, event_length):
+        """ Describes how much power the DER can discharge to qualify for RA or DR. Used to determine
+        the system's qualifying commitment.
+
+        Args:
+            event_length (int): the length of the RA or DR event, this is the
+                total hours that a DER is expected to discharge for
+
+        Returns: int/float
+
+        """
+        return self.electric_power_capacity
+
+    def initialize_variables(self, size):
         """ Adds optimization variables to dictionary
 
         Variables added:
-            chp_elec (float Variable): A cvxpy variable for CHP electricity generation
-            chp_therm (float Variable): A cvxpy variable for CHP thermal generation
-            chp_on (boolean Variable): A cvxpy variable for CHP on/off flag
 
         Args:
             size (Int): Length of optimization variables to create
@@ -65,92 +112,101 @@ class CHP(DER):
             Dictionary of optimization variables
         """
 
-        variables = {'chp_elec': cvx.Variable(shape=size, name='chp_elec', nonneg=True),
-                     'chp_therm': cvx.Variable(shape=size, name='chp_therm', nonneg=True),
-                     'chp_on': cvx.Variable(shape=size, boolean=True, name='chp_on')}
+        self.variables_dict = {
+            'chp_elec': cvx.Variable(shape=size, name=f'{self.name}-P', nonneg=True),
+            'chp_therm': cvx.Variable(shape=size, name=f'{self.name}-thermalP', nonneg=True),
+            'chp_on': cvx.Variable(shape=size, boolean=True, name=f'{self.name}-on'),
+            'udis': cvx.Variable(shape=size, name=f'{self.name}-udis', nonneg=True),
+        }
 
-        # CHP power reservation that can contribute to the POI
-        variables.update({'chp_pow_res_C_min': cvx.Variable(shape=size, name='charge_up_potential', nonneg=True),
-                          'chp_pow_res_C_max': cvx.Variable(shape=size, name='charge_down_potential', nonneg=True),
-                          'chp_pow_res_D_min': cvx.Variable(shape=size, name='discharge_down_potential', nonneg=True),
-                          'chp_pow_res_D_max': cvx.Variable(shape=size, name='discharge_up_potential', nonneg=True)})
+    def get_discharge(self, mask):
+        """
+        Args:
+            mask (DataFrame): A boolean array that is true for indices corresponding to time_series data included
+                in the subs data set
 
-        return variables
+        Returns: the discharge as a function of time for the
 
-    def objective_function(self, variables, mask, annuity_scalar=1):
-        """ Generates the objective function related to a CHP system.
+        """
+        return self.variables_dict['chp_elec']
+
+    def get_discharge_up_schedule(self, mask):
+        """ the amount of discharge power in the up direction (supplying power up into the grid) that
+        this DER can schedule to reserve
 
         Args:
-            variables (Dict): dictionary of variables being optimized
-            mask (Series): time series (indices) of booleans used
-            annuity_scalar (float): a scalar value to be multiplied by any yearly cost or benefit
-                                    that helps capture the cost/benefit over the entire project lifetime
-                                    (only to be set iff sizing)
+            mask (DataFrame): A boolean array that is true for indices corresponding to time_series data included
+                    in the subs data set
+
+        Returns: CVXPY parameter/variable
+
+        """
+        return cvx.multiply(self.variables_dict['chp_on'], self.electric_power_capacity - self.variables_dict['chp_elec'])
+
+    def get_discharge_down_schedule(self, mask):
+        """ the amount of discharging power in the up direction (pulling power down from the grid) that
+        this DER can schedule to reserve
+
+        Args:
+            mask (DataFrame): A boolean array that is true for indices corresponding to time_series data included
+                    in the subs data set
+
+        Returns: CVXPY parameter/variable
+
+        """
+        return cvx.multiply(self.variables_dict['chp_on'], self.variables_dict['chp_elec'])
+
+    def get_energy_option_down(self, mask):
+        """ the amount of energy in a timestep that is taken from the distribution grid
+
+        Returns: the energy throughput in kWh for this technology
+
+        """
+        return self.dt * self.variables_dict['udis']
+
+    def objective_function(self, mask, annuity_scalar=1):
+        """ Generates the objective function related to a technology. Default includes O&M which can be 0
+
+        Args:
+            mask (Series): Series of booleans used, the same length as case.power_kw
+            annuity_scalar (float): a scalar value to be multiplied by any yearly cost or benefit that helps capture the cost/benefit over
+                the entire project lifetime (only to be set iff sizing)
 
         Returns:
-            self.costs (Dict): Dict of objective costs
+            costs (Dict): Dict of objective costs
         """
 
-        chp_elec = variables['chp_elec']
         # natural gas price has unit of $/MMBTU
         # OMExpenses has unit of $/MWh
-        self.costs = {'chp_fuel': cvx.sum(cvx.multiply(chp_elec, self.heat_rate * (self.natural_gas_price[mask]*1000000)
-                                                       * self.dt * annuity_scalar)),
-                      'chp_variable': cvx.sum(cvx.multiply(chp_elec, (self.OMExpenses/1000) * self.dt * annuity_scalar))
-                      }
+        costs = {'chp_fuel': cvx.sum(cvx.multiply(self.variables_dict['chp_elec'], self.heat_rate * (self.natural_gas_price.loc[mask]*1000000)
+                                                  * self.dt * annuity_scalar)),
+                 'chp_variable': cvx.sum(self.variables_dict['chp_elec'] * (self.OMExpenses/1000) * self.dt * annuity_scalar)
+                 }
 
         # add startup objective costs
         if self.startup:
-            self.costs.update({'chp_startup': cvx.sum(variables['chp_on']) * self.p_startup * annuity_scalar})
+            # TODO this is NOT how you would calculate the start up cost of a CHP. pls look at formulation doc and revise --HN
+            costs.update({'chp_startup': cvx.sum(self.variables_dict['chp_on']) * self.p_startup * annuity_scalar})
 
-        return self.costs
+        return costs
 
-    def objective_constraints(self, variables, mask, reservations, mpc_ene=None):
-        """ Builds the master constraint list for the subset of timeseries data being optimized.
+    def constraints(self, mask):
+        """Default build constraint list method. Used by services that do not have constraints.
 
         Args:
-            variables (Dict): Dictionary of variables being optimized
             mask (DataFrame): A boolean array that is true for indices corresponding to time_series data included
-                in the subs data set
-            reservations (Dict): Dictionary of energy and power reservations required by the services being
-                performed with the current optimization subset
-            mpc_ene (float): value of energy at end of last opt step (for mpc opt)
+                    in the subs data set
 
         Returns:
-            A list of constraints that corresponds to any physical generator constraints and its service constraints
+            A list of constraints that corresponds the battery's physical constraints and its service constraints
         """
-
-        chp_elec = variables['chp_elec']
-        chp_therm = variables['chp_therm']
-        chp_on = variables['chp_on']
         constraint_list = []
 
-        constraint_list += [cvx.NonPos(-chp_therm + (self.thermal_load[mask]/BTU_H_PER_KW))]
-        constraint_list += [cvx.Zero(cvx.multiply(chp_therm, self.electric_heat_ratio) - chp_elec)]
-
-        # # POI will handle the power reservations for technology, these 4 constraints will eventually move to
-        # # Scenario via POI class
-        # constraint_list += [cvx.NonPos(reservations['D_max'] - (self.electric_power_capacity * chp_on))]
-        # constraint_list += [cvx.NonPos(reservations['D_max'] - (self.electric_power_capacity - chp_elec))]
-        # constraint_list += [cvx.NonPos(reservations['D_min'] - chp_elec)]
+        constraint_list += [cvx.NonPos(-self.variables_dict['chp_therm'] + (self.thermal_load.loc[mask]/BTU_H_PER_KW))]
+        constraint_list += [cvx.Zero(self.variables_dict['chp_therm'] * self.electric_heat_ratio - self.variables_dict['chp_elec'])]
 
         # CHP physical/inverter constraints
-        constraint_list += [cvx.NonPos(-chp_elec)]
-        constraint_list += [cvx.NonPos(chp_elec - self.electric_power_capacity * chp_on)]
-
-        discharge_down_potential = variables['chp_pow_res_D_min']
-        discharge_up_potential = variables['chp_pow_res_D_max']
-
-        # power reservation contributed by CHP technology has different meaning and should be separate from that
-        # contributed by service/value stream
-        # reservation potential should be the technology system capacity to measure how much it can discharge less or
-        # how much it can flexibly discharge more
-        constraint_list += [cvx.NonPos(discharge_up_potential - (self.electric_power_capacity * chp_on))]
-        constraint_list += [cvx.NonPos(discharge_up_potential - (self.electric_power_capacity - chp_elec))]
-        constraint_list += [cvx.Zero(discharge_down_potential - chp_elec)]
-
-        # testing symmetric reservation for combined market
-        # constraint_list += [cvx.Zero(discharge_down_potential - discharge_up_potential)]
+        constraint_list += [cvx.NonPos(self.variables_dict['chp_elec'] - self.electric_power_capacity * self.variables_dict['chp_on'])]
 
         return constraint_list
 
@@ -161,11 +217,13 @@ class CHP(DER):
             pertaining to this instance
 
         """
+        tech_id = self.unique_tech_id()
+        results = pd.DataFrame(index=self.variables_df.index)
+        results[tech_id + ' CHP Generation (kW)'] = self.variables_df['chp_elec']
+        results[tech_id + ' CHP Thermal Generation (kW)'] = self.variables_df['chp_therm']
+        results[tech_id + ' CHP on (y/n)'] = self.variables_df['chp_on']
+        results[tech_id + ' Energy Option (kWh)'] = self.variables_df['udis'] * self.dt
 
-        results = pd.DataFrame(index=self.variables.index)
-        results[self.name + ' CHP Generation (kW)'] = self.variables['chp_elec']
-        results[self.name + ' CHP Thermal Generation (BTU)'] = self.variables['chp_therm']
-        results[self.name + ' CHP on (y/n)'] = self.variables['chp_on']
         return results
 
     def proforma_report(self, opt_years, results):
@@ -183,10 +241,11 @@ class CHP(DER):
             DataFrame has only one column, labeled by the int 0
 
         """
+        tech_id = self.unique_tech_id()
         pro_forma = super().proforma_report(opt_years, results)
-        fuel_col_name = self.name + ' Natural Gas Costs'
-        variable_col_name = self.name + ' Variable O&M Costs'
-        chp_elec = self.variables['chp_elec']
+        fuel_col_name = tech_id + ' Natural Gas Costs'
+        variable_col_name = tech_id + ' Variable O&M Costs'
+        chp_elec = self.variables_df['chp_elec']
 
         for year in opt_years:
             chp_elec_sub = chp_elec.loc[chp_elec.index.year == year]

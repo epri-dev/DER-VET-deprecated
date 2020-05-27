@@ -168,12 +168,12 @@
 		<electric_heat_ratio min="0.0" type="float" />
 		<heat_rate min="0.0" type="float" />
 		<electric_power_capacity min="0.0" type="float" />
-		<ccost min="0.0" type="float" />
-		<ccost_kW min="0.0" type="float" />
-		<OMexpenses min="0.0" type="float" />
+		<ccost cba="y" min="0.0" type="float" />
+		<ccost_kW cba="y" min="0.0" type="float" />
+		<OMexpenses cba="y" min="0.0" type="float" />
 		<electric_ramp_rate min="0.0" type="float" />
 		<startup type="bool" allowed_values="1|0" />
-		<p_startup min="0.0" type="float" />
+		<p_startup cba="y" min="0.0" type="float" />
 		<startup_time min="0.0" type="int" />
 		<nsr_response_time min="0" type="int" />
 		<sr_response_time min="0" type="int" />
