@@ -18,6 +18,7 @@ from MicrogridDER.CAESSizing import CAESSizing
 from MicrogridDER.PVSizing import PVSizing
 from MicrogridDER.ICESizing import ICESizing
 from MicrogridDER.LoadControllable import ControllableLoad
+from MicrogridDER.CHP import CHP
 from storagevet.ValueStreams.DAEnergyTimeShift import DAEnergyTimeShift
 from storagevet.ValueStreams.FrequencyRegulation import FrequencyRegulation
 from storagevet.ValueStreams.NonspinningReserve import NonspinningReserve
@@ -59,6 +60,7 @@ class MicrogridScenario(Scenario):
         Scenario.__init__(self, input_tree)
 
         self.value_stream_input_map.update({'Reliability': input_tree.Reliability})
+        self.technology_inputs_map.update({'CHP': input_tree.CHP})
 
         u_logger.info("ScenarioSizing initialized ...")
 
@@ -71,7 +73,8 @@ class MicrogridScenario(Scenario):
             'Battery': BatterySizing,
             'PV': PVSizing,
             'ICE': ICESizing,
-            'Load': ControllableLoad
+            'Load': ControllableLoad,
+            'CHP': CHP
         }
 
         value_stream_class_map = {
