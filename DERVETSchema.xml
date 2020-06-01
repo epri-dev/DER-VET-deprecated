@@ -77,7 +77,6 @@
 		<rated_capacity cba="n" min="0.0" type="float" />
 		<cost_per_kW cba="y" min="0.0" type="float" />
 		<grid_charge allowed_values="1|0" cba="n" type="bool" />
-		<grid_charge_penalty min="0.0" cba="n" type="float" />
 		<loc allowed_values="ac|dc" cba="n" type="string" />
 		<construction_date cba="n" type="Timestamp" />
 		<operation_date cba="n" type="Timestamp" />
@@ -174,6 +173,7 @@
 		<incl_site_load allowed_values="1|0" cba="n" type="bool" />
 		<max_export type="float" min="0.0"/>
 		<max_import type="float" max="0.0"/>
+		<grid_charge_penalty type="float" min="0.0"/>
 		<apply_interconnection_constraints type="bool" allowed_values="1|0"/>
 		<def_growth cba="n" max="100.0" min="0.0" type="float" />
 		<binary allowed_values="1|0" cba="n" type="bool" />
