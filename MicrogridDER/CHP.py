@@ -25,7 +25,7 @@ BTU_H_PER_KW = 3412.14  # 1kW = 3412.14 BTU/h
 
 
 class CHP(DER, Sizing):
-    """ Combined Heat and Power generation technology system
+    """ Combined Heat and Power generation
 
     """
 
@@ -156,7 +156,7 @@ class CHP(DER, Sizing):
         """
         return cvx.multiply(self.variables_dict['chp_on'], self.variables_dict['chp_elec'])
 
-    def get_energy_option_down(self, mask):
+    def get_energy_option_discharge(self, mask):
         """ the amount of energy in a timestep that is taken from the distribution grid
 
         Returns: the energy throughput in kWh for this technology
@@ -175,12 +175,12 @@ class CHP(DER, Sizing):
         Returns:
             costs (Dict): Dict of objective costs
         """
-
+        tot_power_out = self.variables_dict['chp_elec'] + self.variables_dict['udis']
         # natural gas price has unit of $/MMBTU
         # OMExpenses has unit of $/MWh
-        costs = {'chp_fuel': cvx.sum(cvx.multiply(self.variables_dict['chp_elec'], self.heat_rate * (self.natural_gas_price.loc[mask]*1000000)
+        costs = {'chp_fuel': cvx.sum(cvx.multiply(tot_power_out, self.heat_rate * (self.natural_gas_price.loc[mask]*1000000)
                                                   * self.dt * annuity_scalar)),
-                 'chp_variable': cvx.sum(self.variables_dict['chp_elec'] * (self.OMExpenses/1000) * self.dt * annuity_scalar)
+                 'chp_variable': cvx.sum(tot_power_out * (self.OMExpenses/1000) * self.dt * annuity_scalar)
                  }
 
         # add startup objective costs
