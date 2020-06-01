@@ -20,9 +20,7 @@ class MicrogridServiceAggregator(ServiceAggregator):
         Returns: A boolean that is true if Reliability is doing post facto calculations only
 
         """
-        if len(self.value_streams.keys()) == 1 and 'Reliability' in self.value_streams.keys() and self.value_streams['Reliability'].post_facto_only:
-            return True
-        return False
+        return len(self.value_streams.keys()) == 1 and 'Reliability' in self.value_streams.keys() and self.value_streams['Reliability'].post_facto_only
 
     def is_whole_sale_market(self):
         """

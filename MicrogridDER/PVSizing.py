@@ -34,7 +34,9 @@ class PVSizing(PVSystem.PV, Sizing):
         PVSystem.PV.__init__(self, params)
         Sizing.__init__(self)
         self.curtail = params['curtail']
-
+        if not self.curtail:
+            # if we are not curatiling, then we do not need any variables
+            self.variable_names = {}
         if not self.rated_capacity:
             self.rated_capacity = cvx.Variable(name='PV rating', integer=True)
             self.size_constraints += [cvx.NonPos(-self.rated_capacity)]

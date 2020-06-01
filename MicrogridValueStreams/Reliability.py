@@ -187,10 +187,11 @@ class Reliability(ValueStream):
 
         pv_names = technology_summary_df.loc[technology_summary_df['Type'] == 'Intermittent Resource']
         if len(pv_names):
-            agg_pv_max = pd.DataFrame(np.zeros(len(results)), index=results.index)
-            for name in pv_names.index:
+            agg_pv_max = np.zeros(len(results))
+            for name in pv_names['Name']:
 
-                agg_pv_max += results.loc[:, f'PV: {name} Maximum (kW)']
+                agg_pv_max += results.loc[:, f'PV: {name} Maximum (kW)'].values
+            agg_pv_max = pd.Series(agg_pv_max, index=results.index)
             # rolling sum of energy within a coverage_timestep window
             pv_outage_e = self.rolling_sum(agg_pv_max, self.coverage_timesteps) * self.dt
             # try to cover as much of the outage that can be with PV energy
@@ -205,7 +206,7 @@ class Reliability(ValueStream):
 
             # record contribution
             percent_usage.update({'PV': np.sum(pv_outage_e) / sum_outage_requirement})
-            contribution_arrays.update({'PV Outage Contribution (kWh)': pv_outage_e.values})
+            contribution_arrays.update({'PV Outage Contribution (kWh)': pv_outage_e})
 
         ess_names = technology_summary_df.loc[technology_summary_df['Type'] == 'Energy Storage System']
         if len(ess_names):
