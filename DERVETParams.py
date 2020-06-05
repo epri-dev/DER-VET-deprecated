@@ -436,9 +436,9 @@ class ParamsDER(Params):
             # check to make sure data was included
             for id_str, load_inputs in self.Load:
                 try:
-                    load_inputs['site_load'] = time_series.loc[:, f'Site Load (kW)/{id_str}']
+                    load_inputs['site_load'] = time_series.loc[:, f'Site Load (kW){self.id_mark(id_str)}']
                 except KeyError:
-                    self.record_input_error(f"Missing 'Site Load (kW)/{id_str}' from timeseries input. Please include a site load.")
+                    self.record_input_error(f"Missing 'Site Load (kW){self.id_mark(id_str)}' from timeseries input. Please include a site load.")
 
                 load_inputs.update({'dt': self.Scenario['dt'],
                                     'growth': self.Scenario['def_growth']})

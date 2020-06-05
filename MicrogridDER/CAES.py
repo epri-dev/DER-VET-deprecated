@@ -55,8 +55,8 @@ class CAES(CAESTech.CAES, Sizing, DERExtension):
             'Capital Cost ($/kW)': self.capital_cost_function[1],
             'Capital Cost ($/kWh)': self.capital_cost_function[2]
         }
-        if (sizing_dict['Duration (hours)'] > 24).any():
-            print('The duration of an Energy Storage System is greater than 24 hours!')
+        if sizing_dict['Duration (hours)'] > 24:
+            u_logger.error(f'The duration of {self.name} is greater than 24 hours!')
 
         return sizing_dict
 
