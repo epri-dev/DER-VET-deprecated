@@ -155,7 +155,7 @@
 		<ene_max_rated min="0.0" type="float" />
 		<ulsoc max="100.0" min="0.0" type="float" />
 		<llsoc max="100.0" min="0.0" type="float" />
-		<rte min="0.0" type="float" />
+		<energy_ratio min="1.0" type="float" />
 		<sdr max="99.9" min="0.0" type="float" />
 		<soc_target max="100.0" min="0.0" type="float" />
 		<p_start_ch min="0" type="float" />
