@@ -17,6 +17,7 @@ import logging
 import time
 import argparse
 import os
+from pathlib import Path
 import sys
 
 # ADD STORAGEVET TO PYTHONPATH BEFORE IMPORTING ANY LIBRARIES OTHERWISE IMPORTERROR
@@ -99,7 +100,7 @@ if __name__ == '__main__':
         This section is run when the file is called from the command line.
     """
 
-    parser = argparse.ArgumentParser(prog='run_DERVET.py',
+    parser = argparse.ArgumentParser(prog=Path(__file__).name,
                                      description='The Electric Power Research Institute\'s energy storage system ' +
                                                  'analysis, dispatch, modelling, optimization, and valuation tool' +
                                                  '. Should be used with Python 3.6.x, pandas 0.19+.x, and CVXPY' +
