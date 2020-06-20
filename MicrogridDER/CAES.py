@@ -36,6 +36,23 @@ class CAES(CAESTech.CAES, Sizing, DERExtension):
         DERExtension.__init__(self, params)
         CAESTech.CAES.__init__(self, params)
 
+    def objective_function(self, mask, annuity_scalar=1):
+        """ Generates the objective function related to a technology. Default includes O&M which can be 0
+
+        Args:
+            mask (Series): Series of booleans used, the same length as case.power_kw
+            annuity_scalar (float): a scalar value to be multiplied by any yearly cost or benefit that helps capture the cost/benefit over
+                    the entire project lifetime (only to be set iff sizing, else alpha should not affect the aobject function)
+
+        Returns:
+            self.costs (Dict): Dict of objective costs
+        """
+        costs = super().objective_function(mask, annuity_scalar)
+        if self.being_sized():
+            costs.update({self.name + ' capex': self.get_capex})
+
+        return costs
+
     def sizing_summary(self):
         """
 

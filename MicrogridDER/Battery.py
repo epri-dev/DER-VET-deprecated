@@ -173,7 +173,7 @@ class Battery(BatteryTech.Battery, Sizing, DERExtension):
         """
         costs = super().objective_function(mask, annuity_scalar)
 
-        costs.update({self.name + 'capex': self.get_capex()})
+        costs.update({self.name + ' capex': self.get_capex()})
         return costs
 
     def sizing_summary(self):

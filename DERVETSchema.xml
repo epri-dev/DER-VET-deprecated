@@ -161,6 +161,9 @@
 		<p_start_ch min="0" type="float" />
 		<p_start_dis min="0" type="float" />
 		<duration_max min="0" type="float" optional="y"/>
+		<macrs_term allowed_values="3|5|7|10|15|20|25|27.5|39" cba="y" type="float" />
+		<construction_date cba="n" type="Timestamp" />
+		<operation_date cba="n" type="Timestamp" />
 	</CAES>
 	<Scenario type="scenario" max_num="1">
 		<monthly_data_filename cba="y" type="string" />

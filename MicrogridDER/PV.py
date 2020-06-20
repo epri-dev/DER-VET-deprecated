@@ -68,7 +68,7 @@ class PV(PVSystem.PV, Sizing, DERExtension):
         costs = dict()
 
         if self.being_sized():
-            costs.update({self.name + 'capex': self.get_capex})
+            costs.update({self.name + ' capex': self.get_capex})
 
         return costs
 
