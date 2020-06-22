@@ -16,6 +16,7 @@ import cvxpy as cvx
 from storagevet.Technology import PVSystem
 from MicrogridDER.Sizing import Sizing
 from MicrogridDER.DERExtension import DERExtension
+import pandas as pd
 
 
 class PV(PVSystem.PV, Sizing, DERExtension):
@@ -32,13 +33,11 @@ class PV(PVSystem.PV, Sizing, DERExtension):
             params (dict): Dict of parameters
         """
         # create generic technology object
-        PVSystem.PV.__init__(self, params)
-        Sizing.__init__(self)
-        DERExtension.__init__(self, params)
+        super(PV, self).__init__(params)
 
         self.curtail = params['curtail']
         if not self.curtail:
-            # if we are not curatiling, then we do not need any variables
+            # if we are not curatiling, remove
             self.variable_names = {}
         if not self.rated_capacity:
             self.rated_capacity = cvx.Variable(name='PV rating', integer=True)
@@ -52,6 +51,21 @@ class PV(PVSystem.PV, Sizing, DERExtension):
         """
         constraints = super().constraints(mask)
         constraints += self.size_constraints
+        sr_max_capacity = self.variables_dict['sr_max_capacity']
+        nsr_max_capacity = self.variables_dict['nsr_max_capacity']
+        fr_max_regulation = self.variables_dict['fr_max_regulation']
+        # add ramp rate constraints here --> SR, NSR, FR
+        # TODO: for fr_max_regulation, make sure that you go back and do the up/down regulation part. Because FR is bidirectional --> Kunle
+        # TODO: refer to Miles handout as well to make sure that your objective functions are in line w/ expectations --> Kunle
+        constraints += [cvx.NonPos(sr_max_capacity - cvx.multiply(self.lag_time, self.sr_response_time) +
+                                       cvx.multiply(self.sr_response_time, self.startup_time, self.sr_max_ramp_rate))]
+        constraints += [cvx.NonPos(nsr_max_capacity - cvx.multiply(self.lag_time, self.nsr_response_time) +
+                                       cvx.multiply(self.nsr_response_time, self.nsr_max_ramp_rate) +
+                                       cvx.multiply(self.startup_time, self.nsr_max_ramp_rate))]
+        constraints += [cvx.NonPos(fr_max_regulation - cvx.multiply(self.lag_time, self.fr_response_time) +
+                                       cvx.multiply(self.fr_response_time, self.fr_max_ramp_rate) +
+                                       cvx.multiply(self.startup_time, self.fr_max_ramp_rate))]
+
         return constraints
 
     def objective_function(self, mask, annuity_scalar=1):
@@ -100,3 +114,15 @@ class PV(PVSystem.PV, Sizing, DERExtension):
         cost_per_kw = input_dict.get('cost_per_kW')
         if cost_per_kw is not None:
             self.capital_cost_function = cost_per_kw
+
+    def timeseries_report(self):
+        """ Summaries the optimization results for this DER.
+
+        Returns: A timeseries dataframe with user-friendly column headers that summarize the results
+            pertaining to this instance
+
+        """
+        results = PVSystem.PV.timeseries_report(self)
+        more_results = DERExtension.timeseries_report(self)
+        results = pd.concat([results, more_results], axis=1)
+        return results

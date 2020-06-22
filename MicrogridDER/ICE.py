@@ -16,6 +16,7 @@ import cvxpy as cvx
 from storagevet.Technology import InternalCombustionEngine
 from MicrogridDER.Sizing import Sizing
 from MicrogridDER.DERExtension import DERExtension
+import pandas as pd
 
 
 class ICE(InternalCombustionEngine.ICE, Sizing, DERExtension):
@@ -29,16 +30,14 @@ class ICE(InternalCombustionEngine.ICE, Sizing, DERExtension):
         Args:
             params (dict): Dict of parameters for initialization
         """
-        Sizing.__init__(self)
-        DERExtension.__init__(self, params)
         self.n_min = params['n_min']  # generators
         self.n_max = params['n_max']  # generators
-        if self.being_sized():
+        if self.n_min != self.n_max:
             params['n'] = cvx.Variable(integer=True, name='generators')
         else:
             params['n'] = self.n_max
         # create generic technology object
-        InternalCombustionEngine.ICE.__init__(self, params)
+        super(ICE, self).__init__(params)
 
     def constraints(self, mask):
         """ Builds the master constraint list for the subset of timeseries data being optimized.
@@ -52,6 +51,9 @@ class ICE(InternalCombustionEngine.ICE, Sizing, DERExtension):
         """
         ice_gen = self.variables_dict['ice_gen']
         on_ice = self.variables_dict['on_ice']
+        sr_max_capacity = self.variables_dict['sr_max_capacity']
+        nsr_max_capacity = self.variables_dict['nsr_max_capacity']
+        fr_max_regulation = self.variables_dict['fr_max_regulation']
         constraint_list = super().constraints(mask)
 
         if self.being_sized():
@@ -64,7 +66,18 @@ class ICE(InternalCombustionEngine.ICE, Sizing, DERExtension):
 
             constraint_list += [cvx.NonPos(self.n_min - self.n)]
             constraint_list += [cvx.NonPos(self.n - self.n_max)]
-
+        # add ramp rate constraints here --> SR, NSR, FR
+        # TODO: for fr_max_regulation, make sure that you go back and do the up/down regulation part. Because FR is bidirectional --> Kunle
+        # TODO: refer to Miles handout as well to make sure that your objective functions are in line w/ expectations --> Kunle
+        constraint_list += [cvx.NonPos(sr_max_capacity - cvx.multiply(self.lag_time, self.sr_response_time) +
+                                       cvx.multiply(self.sr_response_time, self.sr_max_ramp_rate) +
+                                       cvx.multiply(self.startup_time, self.sr_max_ramp_rate))]
+        constraint_list += [cvx.NonPos(nsr_max_capacity - cvx.multiply(self.lag_time, self.nsr_response_time) +
+                                       cvx.multiply(self.nsr_response_time, self.nsr_max_ramp_rate) +
+                                       cvx.multiply(self.startup_time, self.nsr_max_ramp_rate))]
+        constraint_list += [cvx.NonPos(fr_max_regulation - cvx.multiply(self.lag_time, self.fr_response_time) +
+                                       cvx.multiply(self.fr_response_time, self.fr_max_ramp_rate) +
+                                       cvx.multiply(self.startup_time, self.fr_max_ramp_rate))]
         return constraint_list
 
     def objective_function(self, mask, annuity_scalar=1):
@@ -153,3 +166,15 @@ class ICE(InternalCombustionEngine.ICE, Sizing, DERExtension):
         fixed_om_cost = input_dict.get('fixed_om_cost')
         if variable_cost is not None:
             self.fixed_om = fixed_om_cost
+
+    def timeseries_report(self):
+        """ Summaries the optimization results for this DER.
+
+        Returns: A timeseries dataframe with user-friendly column headers that summarize the results
+            pertaining to this instance
+
+        """
+        results = InternalCombustionEngine.ICE.timeseries_report(self)
+        more_results = DERExtension.timeseries_report(self)
+        results = pd.concat([results, more_results], axis=1)
+        return results

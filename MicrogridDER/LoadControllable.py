@@ -30,13 +30,11 @@ class ControllableLoad(Load, Sizing, DERExtension):
             params (dict): Dict of parameters for initialization
         """
         # create generic technology object
-        Load.__init__(self, params)
-        DERExtension.__init__(self, params)
+        super(ControllableLoad, self).__init__(params)
 
         # input params  UNITS ARE COMMENTED TO THE RIGHT
         self.rated_power = params['power_rating']  # kW
         self.duration = params['duration']  # hour
-        self.variables_dict = {}
         if self.duration:  # if DURATION is not 0
             self.tag = 'ControllableLoad'
             self.variable_names = {'power', 'ene_load'}

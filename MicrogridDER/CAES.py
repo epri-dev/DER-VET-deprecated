@@ -16,25 +16,60 @@ from storagevet.Technology import CAESTech
 import logging
 from MicrogridDER.Sizing import Sizing
 from MicrogridDER.DERExtension import DERExtension
+import pandas as pd
+import cvxpy as cvx
 
 u_logger = logging.getLogger('User')
 e_logger = logging.getLogger('Error')
 
 
-class CAES(CAESTech.CAES, Sizing, DERExtension):
+class CAES(CAESTech.CAES, Sizing, DERExtension, Sizing):
     """ CAES class that inherits from StorageVET. this object does not size.
 
     """
-
-    def __init__(self, params):
-        """ Initialize all technology with the following attributes.
+    def constraints(self, mask):
+        """ Builds the master constraint list for the subset of timeseries data being optimized.
 
         Args:
-            params (dict): Dict of parameters for initialization
+            mask (DataFrame): A boolean array that is true for indices corresponding to time_series data included
+                in the subs data set
+
+        Returns:
+            A list of constraints that corresponds the battery's physical constraints and its service constraints
         """
-        Sizing.__init__(self)
-        DERExtension.__init__(self, params)
-        CAESTech.CAES.__init__(self, params)
+
+        constraint_list = super().constraints(mask)
+
+        nsr_max_capacity = self.variables_dict['nsr_max_capacity']
+        sr_max_capacity = self.variables_dict['sr_max_capacity']
+        fr_max_regulation = self.variables_dict['fr_max_regulation']
+        if self.incl_startup and self.incl_binary:
+            # add ramp rate constraints here --> SR, NSR, FR (these include startup_time)
+            # TODO: confirm that these newfound constraints adhere to the mathematical formulation!!!
+            # TODO: for fr_max_regulation, make sure that you go back and do the up/down regulation part. Because FR is bidirectional --> Kunle
+            # TODO: refer to Miles handout as well to make sure that your objective functions are in line w/ expectations --> Kunle
+            constraint_list += [cvx.NonPos(sr_max_capacity - cvx.multiply(self.lag_time, self.sr_response_time) +
+                                           cvx.multiply(self.sr_response_time, self.sr_max_ramp_rate) +
+                                           cvx.multiply(self.startup_time, self.sr_max_ramp_rate))]
+            constraint_list += [cvx.NonPos(nsr_max_capacity - cvx.multiply(self.lag_time, self.nsr_response_time) +
+                                           cvx.multiply(self.nsr_response_time, self.nsr_max_ramp_rate) +
+                                           cvx.multiply(self.startup_time, self.nsr_max_ramp_rate))]
+            constraint_list += [cvx.NonPos(fr_max_regulation - cvx.multiply(self.lag_time, self.fr_response_time) +
+                                           cvx.multiply(self.fr_response_time, self.fr_max_ramp_rate) +
+                                           cvx.multiply(self.startup_time, self.fr_max_ramp_rate))]
+        else:
+            # add ramp rate constraints here --> SR, NSR, FR (these DON'T include startup_time)
+            # TODO: confirm that these newfound constraints adhere to the mathematical formulation!!!
+            # TODO: for fr_max_regulation, make sure that you go back and do the up/down regulation part. Because FR is bidirectional --> Kunle
+            # TODO: refer to Miles handout as well to make sure that your objective functions are in line w/ expectations --> Kunle
+            constraint_list += [cvx.NonPos(sr_max_capacity - cvx.multiply(self.lag_time, self.sr_response_time) +
+                                           cvx.multiply(self.sr_response_time, self.sr_max_ramp_rate))]
+            constraint_list += [cvx.NonPos(nsr_max_capacity - cvx.multiply(self.lag_time, self.nsr_response_time) +
+                                           cvx.multiply(self.nsr_response_time, self.nsr_max_ramp_rate))]
+            constraint_list += [cvx.NonPos(fr_max_regulation - cvx.multiply(self.lag_time, self.fr_response_time) +
+                                           cvx.multiply(self.fr_response_time, self.fr_max_ramp_rate))]
+
+        return constraint_list
 
     def sizing_summary(self):
         """
@@ -88,3 +123,15 @@ class CAES(CAESTech.CAES, Sizing, DERExtension):
             p_start_dis = input_dict.get('p_start_dis')
             if p_start_dis is not None:
                 self.p_start_dis = p_start_dis
+
+    def timeseries_report(self):
+        """ Summaries the optimization results for this DER.
+
+        Returns: A timeseries dataframe with user-friendly column headers that summarize the results
+            pertaining to this instance
+
+        """
+        results = CAESTech.CAES.timeseries_report(self)
+        more_results = DERExtension.timeseries_report(self)
+        results = pd.concat([results, more_results], axis=1)
+        return results

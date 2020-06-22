@@ -17,6 +17,7 @@ import cvxpy as cvx
 from MicrogridDER.Sizing import Sizing
 from storagevet.Technology import BatteryTech
 from MicrogridDER.DERExtension import DERExtension
+import pandas as pd
 
 
 u_logger = logging.getLogger('User')
@@ -38,9 +39,7 @@ class Battery(BatteryTech.Battery, Sizing, DERExtension):
         """
 
         # create generic storage object
-        BatteryTech.Battery.__init__(self, params)
-        DERExtension.__init__(self, params)
-        Sizing.__init__(self)
+        super(Battery, self).__init__(params)
 
         self.user_duration = params['duration_max']
 
@@ -102,7 +101,7 @@ class Battery(BatteryTech.Battery, Sizing, DERExtension):
     def energy_capacity(self, solution=False):
         """
 
-        Returns: the maximum energy that can be attained
+        Returns: the maximum energy stored physically possible
 
         """
         if not solution:
@@ -157,6 +156,34 @@ class Battery(BatteryTech.Battery, Sizing, DERExtension):
         constraint_list = super().constraints(mask)
 
         constraint_list += self.size_constraints
+        nsr_max_capacity = self.variables_dict['nsr_max_capacity']
+        sr_max_capacity = self.variables_dict['sr_max_capacity']
+        fr_max_regulation = self.variables_dict['fr_max_regulation']
+        if self.incl_startup and self.incl_binary:
+            # add ramp rate constraints here --> SR, NSR, FR (these include startup_time)
+            # TODO: confirm that these newfound constraints adhere to the mathematical formulation!!!
+            # TODO: for fr_max_regulation, make sure that you go back and do the up/down regulation part. Because FR is bidirectional --> Kunle
+            # TODO: refer to Miles handout as well to make sure that your objective functions are in line w/ expectations --> Kunle
+            constraint_list += [cvx.NonPos(sr_max_capacity - cvx.multiply(self.lag_time, self.sr_response_time) +
+                                           cvx.multiply(self.sr_response_time, self.sr_max_ramp_rate) +
+                                           cvx.multiply(self.startup_time, self.sr_max_ramp_rate))]
+            constraint_list += [cvx.NonPos(nsr_max_capacity - cvx.multiply(self.lag_time, self.nsr_response_time) +
+                                           cvx.multiply(self.nsr_response_time, self.nsr_max_ramp_rate) +
+                                           cvx.multiply(self.startup_time, self.nsr_max_ramp_rate))]
+            constraint_list += [cvx.NonPos(fr_max_regulation - cvx.multiply(self.lag_time, self.fr_response_time) +
+                                           cvx.multiply(self.fr_response_time, self.fr_max_ramp_rate) +
+                                           cvx.multiply(self.startup_time, self.fr_max_ramp_rate))]
+        else:
+            # add ramp rate constraints here --> SR, NSR, FR (these DON'T include startup_time)
+            # TODO: confirm that these newfound constraints adhere to the mathematical formulation!!!
+            # TODO: for fr_max_regulation, make sure that you go back and do the up/down regulation part. Because FR is bidirectional --> Kunle
+            # TODO: refer to Miles handout as well to make sure that your objective functions are in line w/ expectations --> Kunle
+            constraint_list += [cvx.NonPos(sr_max_capacity - cvx.multiply(self.lag_time, self.sr_response_time) +
+                                           cvx.multiply(self.sr_response_time, self.sr_max_ramp_rate))]
+            constraint_list += [cvx.NonPos(nsr_max_capacity - cvx.multiply(self.lag_time, self.nsr_response_time) +
+                                           cvx.multiply(self.nsr_response_time, self.nsr_max_ramp_rate))]
+            constraint_list += [cvx.NonPos(fr_max_regulation - cvx.multiply(self.lag_time, self.fr_response_time) +
+                                           cvx.multiply(self.fr_response_time, self.fr_max_ramp_rate))]
 
         return constraint_list
 
@@ -234,3 +261,15 @@ class Battery(BatteryTech.Battery, Sizing, DERExtension):
             p_start_dis = input_dict.get('p_start_dis')
             if p_start_dis is not None:
                 self.p_start_dis = p_start_dis * 100
+
+    def timeseries_report(self):
+        """ Summaries the optimization results for this DER.
+
+        Returns: A timeseries dataframe with user-friendly column headers that summarize the results
+            pertaining to this instance
+
+        """
+        results = BatteryTech.Battery.timeseries_report(self)
+        more_results = DERExtension.timeseries_report(self)
+        results = pd.concat([results, more_results], axis=1)
+        return results
