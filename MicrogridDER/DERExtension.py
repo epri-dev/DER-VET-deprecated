@@ -41,9 +41,9 @@ class DERExtension:
             input_dict: hold input data, keys are the same as when initialized
 
         """
-        marcs_term = input_dict.get('macrs_term')
-        if marcs_term is not None:
-            self.macrs = marcs_term
+        macrs_term = input_dict.get('macrs_term')
+        if macrs_term is not None:
+            self.macrs = macrs_term
 
         ccost = input_dict.get('ccost')
         if ccost is not None:
