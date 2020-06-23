@@ -97,8 +97,9 @@ class ParamsDER(Params):
             Returns dictionary of instances of Params, each key is a number
         """
         cls.instances = super().initialize(filename, verbose)  # everything that initialize does in Params (steps 1-4)
-        # 1) INITIALIZE ALL MUTABLE CLASS VARIABLES
+        # 1) INITIALIZE CLASS VARIABLES
         cls.sensitivity['cba_values'] = dict()
+        cls.cba_input_error_raised = False
 
         # 5) load direct data and create input template
         # determine if cba value can be given and validate
@@ -125,7 +126,7 @@ class ParamsDER(Params):
         """ Initialize these following attributes of the empty Params class object.
         """
         super().__init__()
-        self.Reliability = self.flatten_tag_id(self.read_and_validate('Reliability'))  # Value Stream
+        self.Reliability = self.read_and_validate('Reliability')  # Value Stream
         self.Load = self.read_and_validate('ControllableLoad')  # DER
         self.CHP = self.read_and_validate('CHP')
 
@@ -147,26 +148,26 @@ class ParamsDER(Params):
 
         """
         template = dict()
-        template['Scenario'] = cls.flatten_tag_id(cls.read_and_validate_cba('Scenario'))
-        template['Finance'] = cls.flatten_tag_id(cls.read_and_validate_cba('Finance'))
+        template['Scenario'] = cls.read_and_validate_evaluation('Scenario')
+        template['Finance'] = cls.read_and_validate_evaluation('Finance')
 
         # create dictionary for CBA values for DERs
         template['ders_values'] = {
-            'Battery': cls.read_and_validate_cba('Battery'),
-            'CAES': cls.read_and_validate_cba('CAES'),
-            'PV': cls.read_and_validate_cba('PV'),  # cost_per_kW (and then recalculate capex)
-            'CHP': cls.read_and_validate_cba('CHP'),
-            'ICE': cls.read_and_validate_cba('ICE'),  # fuel_price,
-            'Load': cls.read_and_validate_cba('Load')
+            'Battery': cls.read_and_validate_evaluation('Battery'),
+            'CAES': cls.read_and_validate_evaluation('CAES'),
+            'CHP': cls.read_and_validate_evaluation('CHP'),
+            'PV': cls.read_and_validate_evaluation('PV'),  # cost_per_kW (and then recalculate capex)
+            'ICE': cls.read_and_validate_evaluation('ICE'),  # fuel_price,
+            # 'ControllableLoad': cls.read_and_validate_evaluation('ControllableLoad')
         }
 
         # create dictionary for CBA values for all services (from data files)
-        template['valuestream_values'] = {'User': cls.flatten_tag_id(cls.read_and_validate_cba('User')),  # only have one entry in it (key = price)
-                                          'Deferral': cls.flatten_tag_id(cls.read_and_validate_cba('Deferral'))}
+        template['valuestream_values'] = {'User': cls.read_and_validate_evaluation('User'),  # only have one entry in it (key = price)
+                                          'Deferral': cls.read_and_validate_evaluation('Deferral')}
         return template
 
     @classmethod
-    def read_and_validate_cba(cls, name):
+    def read_and_validate_evaluation(cls, name):
         """ Read data from valuation XML file
 
         Args:
@@ -211,7 +212,7 @@ class ParamsDER(Params):
                             intended_type = key.find('Type').text
                             if key.get('analysis')[0].lower() == 'y' or key.get('analysis')[0].lower() == '1':
                                 # if analysis, then convert each value and save as list
-                                tag_key = (tag.tag, key.tag)
+                                tag_key = (tag.tag, key.tag, tag.get('id'))
                                 sensitivity_values = cls.extract_data(key.find('Evaluation').text, intended_type)
 
                                 # validate each value
@@ -226,6 +227,7 @@ class ParamsDER(Params):
                             else:
                                 # convert to correct data type
                                 valuation_entry = cls.convert_data_type(key.find('Evaluation').text, intended_type)
+                                cls.checks_for_validate(valuation_entry, schema_key, f"{name}-{tag.get('id')}")
                             # save evaluation value OR save a place for the sensitivity value to fill in the dictionary later w/ None
                             dictionary[key.tag] = valuation_entry
                 # save set of KEYS (in the dictionary) to the TAG that it belongs to (multiple dictionaries if mutliple IDs)
@@ -296,14 +298,19 @@ class ParamsDER(Params):
         Returns: set of values
 
         """
-        try:
-            values = set(cls.sensitivity['cba_values'][(tag, key)])
-        except KeyError:
-            try:
-                values = {cls.cba_input_template[tag][key]}
-            except (TypeError, KeyError):
-                values = set()
-        return values
+        values = []
+
+        tag_dict = cls.cba_input_template.get(tag)
+        if tag_dict is not None:
+            for id_str in tag_dict.keys():
+                try:
+                    values += list(cls.sensitivity['cba_values'][(tag, key, id_str)])
+                except KeyError:
+                    try:
+                        values += [cls.cba_input_template[tag][id_str][key]]
+                    except KeyError:
+                        pass
+        return set(values)
 
     @classmethod
     def add_evaluation_to_case_definitions(cls):
@@ -338,37 +345,45 @@ class ParamsDER(Params):
         for index in cls.instances.keys():
             cba_dict = copy.deepcopy(cls.cba_input_template)
             # check to see if there are any CBA values included in case definition OTHERWISE just read in any referenced data
-            for tag_key in cls.sensitivity['cba_values'].keys():
+            for tag_key_id in cls.sensitivity['cba_values'].keys():
                 row = cls.case_definitions.iloc[index]
                 # modify the case dictionary
-                if tag_key[0] in cls.cba_input_template['ders_values'].keys():
-                    cba_dict['ders_values'][tag_key[0]][tag_key[1]] = row.loc[f"CBA {tag_key}"]
-                elif tag_key[0] in cls.cba_input_template['valuestream_values'].keys():
-                    cba_dict['valuestream_values'][tag_key[0]][tag_key[1]] = row.loc[f"CBA {tag_key}"]
+                if tag_key_id[0] in cls.cba_input_template['ders_values'].keys():
+                    cba_dict['ders_values'][tag_key_id[0]][tag_key_id[2]][tag_key_id[1]] = row.loc[f"CBA {tag_key_id}"]
+                elif tag_key_id[0] in cls.cba_input_template['valuestream_values'].keys():
+                    cba_dict['valuestream_values'][tag_key_id[0]][tag_key_id[2]][tag_key_id[1]] = row.loc[f"CBA {tag_key_id}"]
                 else:
-                    cba_dict[tag_key[0]][tag_key[1]] = row.loc[f"CBA {tag_key}"]
-            cls.load_evaluation_datasets(cba_dict, cls.instances[index].Scenario['frequency'])
+                    cba_dict[tag_key_id[0]][tag_key_id[2]][tag_key_id[1]] = row.loc[f"CBA {tag_key_id}"]
+            # flatten dictionaries for VS, Scenario, and Fiances & prepare referenced data
+            cba_dict = cls.load_and_prepare_cba(cba_dict, cls.instances[index].Scenario['frequency'])
             cls.instances[index].Finance['CBA'] = cba_dict
 
     @classmethod
-    def load_evaluation_datasets(cls, cba_value_dic, freq):
-        """Loads data sets that are specified by the '_filename' parameters """
-        if 'Scenario' in cba_value_dic.keys():
-            scenario = cba_value_dic['Scenario']
-            # freq = cls.timeseries_frequency(scenario['dt'])
-            scenario['frequency'] = freq
-            if 'time_series_filename' in scenario.keys():
-                time_series = cls.referenced_data['time_series'][scenario['time_series_filename']]
-                scenario["time_series"] = cls.preprocess_timeseries(time_series, freq)
-            if 'monthly_data_filename' in scenario.keys():
-                scenario["monthly_data"] = cls.referenced_data["monthly_data"][scenario["monthly_data_filename"]]
+    def load_and_prepare_cba(cls, cba_dict, freq):
+        """ Flattens each tag that the Schema has defined to only have 1 allowed. Loads data sets that are specified by the '_filename' parameters
 
-        if 'Finance' in cba_value_dic.keys():
-            finance = cba_value_dic['Finance']
-            if 'yearly_data_filename' in finance.keys():
-                finance["yearly_data"] = cls.referenced_data["yearly_data"][finance["yearly_data_filename"]]
-            if 'customer_tariff_filename' in finance.keys():
-                finance["customer_tariff"] = cls.referenced_data["customer_tariff"][finance["customer_tariff_filename"]]
+        Returns a params class where the tag attributes that are not allowed to have more than one set of key inputs are just dictionaries of
+            their key inputs (while the rest remain dictionaries of the sets of key inputs)
+        """
+        cba_dict['Scenario'] = cls.flatten_tag_id(cba_dict['Scenario'])
+        cba_dict['Finance'] = cls.flatten_tag_id(cba_dict['Finance'])
+        cba_dict['valuestream_values']['User'] = cls.flatten_tag_id(cba_dict['valuestream_values']['User'])
+        cba_dict['valuestream_values']['Deferral'] = cls.flatten_tag_id(cba_dict['valuestream_values']['Deferral'])
+
+        scenario = cba_dict['Scenario']
+        scenario['frequency'] = freq
+        if 'time_series_filename' in scenario.keys():
+            time_series = cls.referenced_data['time_series'][scenario['time_series_filename']]
+            scenario["time_series"] = cls.preprocess_timeseries(time_series, freq)
+        if 'monthly_data_filename' in scenario.keys():
+            scenario["monthly_data"] = cls.referenced_data["monthly_data"][scenario["monthly_data_filename"]]
+
+        finance = cba_dict['Finance']
+        if 'yearly_data_filename' in finance.keys():
+            finance["yearly_data"] = cls.referenced_data["yearly_data"][finance["yearly_data_filename"]]
+        if 'customer_tariff_filename' in finance.keys():
+            finance["customer_tariff"] = cls.referenced_data["customer_tariff"][finance["customer_tariff_filename"]]
+        return cba_dict
 
     def load_scenario(self):
         """ Interprets user given data and prepares it for Scenario.
@@ -393,6 +408,9 @@ class ParamsDER(Params):
                              'ownership': self.Scenario['ownership']})
 
     def load_technology(self):
+        """ Interprets user given data and prepares it for each technology.
+
+        """
         time_series = self.Scenario['time_series']
         sizing_optimization = False
         if len(self.Battery):
@@ -451,13 +469,16 @@ class ParamsDER(Params):
         """
         super().load_services()
 
+        post_facto_only = False
+
         if self.Reliability is not None:
+            post_facto_only = self.Reliability['post_facto_only']
             self.Reliability["dt"] = self.Scenario["dt"]
             try:
                 self.Reliability.update({'critical load': self.Scenario['time_series'].loc[:, 'Critical Load (kW)']})
             except KeyError:
                 self.record_input_error("Missing 'Critial Load (kW)' from timeseries input. Please include a critical load.")
 
-        if self.DA is None and self.retailTimeShift is None and not self.Reliability['post_facto_only']:
+        if self.DA is None and self.retailTimeShift is None and not post_facto_only:
             self.record_input_error('Not providing DA or retailETS might cause the solver to take infinite time to solve!')
         u_logger.info("Successfully prepared the value-stream (services)")

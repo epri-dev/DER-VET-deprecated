@@ -133,7 +133,7 @@ class Reliability(ValueStream):
 
             # We want the minimum power capability of our DER mix in the discharge direction to be the maximum net load (load - solar)
             # to ensure that our DER mix can cover peak net load during any outage in the year
-            return [cvx.NonPos(cvx.max(self.critical_load.loc[mask].values - tot_variable_gen) - combined_rating)]
+            return [cvx.NonPos(cvx.max(self.critical_load.loc[mask].values - tot_variable_gen*self.nu) - combined_rating)]
         else:
             return super().constraints(mask, load_sum, tot_variable_gen, generator_out_sum, net_ess_power, combined_rating)
 
@@ -275,8 +275,8 @@ class Reliability(ValueStream):
                 total_dg_max += der_inst.discharge_capacity()
             if der_inst.technology_type == 'Energy Storage System':
                 ess_properties['rte list'].append(der_inst.rte)
-                ess_properties['operation SOE min'] += der_inst.operational_min_energy()
-                ess_properties['operation SOE max'] += der_inst.operational_max_energy()
+                ess_properties['operation SOE min'] += der_inst.operational_min_energy(solution=True)
+                ess_properties['operation SOE max'] += der_inst.operational_max_energy(solution=True)
                 ess_properties['discharge max'] += der_inst.discharge_capacity(solution=True)
                 ess_properties['charge max'] += der_inst.charge_capacity(solution=True)
                 ess_properties['energy rating'] += der_inst.energy_capacity(solution=True)
@@ -318,13 +318,14 @@ class Reliability(ValueStream):
             load_coverage_prob.append(percentage)
             length += self.dt
         # 3) build DataFrame to return
-        outage_lengths = list(np.arange(0, self.max_outage_duration + self.dt, self.dt))
-        outage_coverage = {'Outage Length (hrs)': outage_lengths,
+        outage_coverage = {'Outage Length (hrs)': np.arange(self.dt, self.max_outage_duration + self.dt, self.dt),
                            # '# of simulations where the outage lasts up to and including': frequency_simulate_outage,
-                           'Load Coverage Probability (%)': [1] + load_coverage_prob}  # first index is prob of covering outage of 0 hours (P=100%)
+                           'Load Coverage Probability (%)': load_coverage_prob}  # first index is prob of covering outage of 0 hours (P=100%)
         end = time.time()
         u_logger.info(f'Critical Load Coverage Curve calculation time: {end - start}')
-        return pd.DataFrame(outage_coverage)
+        lcpc_df = pd.DataFrame(outage_coverage)
+        lcpc_df.set_index('Outage Length (hrs)')
+        return lcpc_df
 
     def simulate_outage(self, reliability_check, demand_left, outage_left, ess_properties=None, init_soe=None):
         """ Simulate an outage that starts with lasting only1 hour and will either last as long as MAX_OUTAGE_LENGTH

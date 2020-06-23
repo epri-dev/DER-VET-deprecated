@@ -1,5 +1,5 @@
 """
-PVSizing.py
+PV.py
 
 This Python class contains methods and attributes specific for technology analysis within StorageVet.
 """
@@ -15,9 +15,10 @@ __version__ = 'beta'  # beta version
 import cvxpy as cvx
 from storagevet.Technology import PVSystem
 from MicrogridDER.Sizing import Sizing
+from MicrogridDER.DERExtension import DERExtension
 
 
-class PVSizing(PVSystem.PV, Sizing):
+class PV(PVSystem.PV, Sizing, DERExtension):
     """ Assumes perfect foresight. Ability to curtail PV generation
 
     """
@@ -33,6 +34,8 @@ class PVSizing(PVSystem.PV, Sizing):
         # create generic technology object
         PVSystem.PV.__init__(self, params)
         Sizing.__init__(self)
+        DERExtension.__init__(self, params)
+
         self.curtail = params['curtail']
         if not self.curtail:
             # if we are not curatiling, then we do not need any variables
@@ -85,3 +88,15 @@ class PVSizing(PVSystem.PV, Sizing):
             'Power Capacity (kW)': rated_capacity,
             'Capital Cost ($/kW)': self.capital_cost_function}
         return sizing_results
+
+    def update_for_evaluation(self, input_dict):
+        """ Updates price related attributes with those specified in the input_dictionary
+
+        Args:
+            input_dict: hold input data, keys are the same as when initialized
+
+        """
+        super(PV, self).update_for_evaluation(input_dict)
+        cost_per_kw = input_dict.get('cost_per_kW')
+        if cost_per_kw is not None:
+            self.capital_cost_function = cost_per_kw

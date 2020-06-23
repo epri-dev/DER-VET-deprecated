@@ -59,7 +59,7 @@
 	<retailTimeShift type="service" max_num="1">
 		<growth cba="n" max="100.0" min="0.0" type="float" />
 	</retailTimeShift>
-	<ControllableLoad type="load" max_num="1">
+	<ControllableLoad type="load">
 		<name cba="n" type="string" />
 		<power_rating cba="n" min="0.0" type="float" />
 		<duration cba="n" min="0.0" type="float" />
@@ -81,14 +81,14 @@
 		<loc allowed_values="ac|dc" cba="n" type="string" />
 		<construction_date cba="n" type="Timestamp" />
 		<operation_date cba="n" type="Timestamp" />
-		<macrs_term allowed_values="3|5|7|10|15|20|25|27.5|39" cba="y" type="float" />
+		<macrs_term allowed_values="3|5|7|10|15|20|25|27.5|39" cba="n" type="float" />
 		<curtail type="bool" allowed_values="1|0"/>
 	</PV>
 	<ICE type="generator">
 		<name cba="n" type="string" />
 		<nsr_response_time cba="n" min="0" type="int" />
 		<sr_response_time cba="n" min="0" type="int" />
-		<macrs_term allowed_values="3|5|7|10|15|20|25|27.5|39" cba="y" type="float" />
+		<macrs_term allowed_values="3|5|7|10|15|20|25|27.5|39" cba="n" type="float" />
 		<min_power cba="n" min="0.0" type="float" />
 		<startup_time cba="n" min="0" type="int" />
 		<efficiency cba="n" min="0.0" type="float" />
@@ -133,7 +133,7 @@
 		<p_start_dis cba="n" min="0" type="float" />
 		<daily_cycle_limit cba="n" min="0" type="float" />
 		<hp cba="y" min="0" type="float" />
-		<macrs_term cba="y" allowed_values="3|5|7|10|15|20|25|27.5|39" type="float" />
+		<macrs_term cba="n" allowed_values="3|5|7|10|15|20|25|27.5|39" type="float" />
 		<duration_max min="0" type="float" optional="y"/>
 	</Battery>
 	<CAES type="storage">
@@ -162,6 +162,9 @@
 		<p_start_ch min="0" type="float" />
 		<p_start_dis min="0" type="float" />
 		<duration_max min="0" type="float" optional="y"/>
+		<macrs_term cba="n" allowed_values="3|5|7|10|15|20|25|27.5|39" type="float" />
+		<construction_date cba="n" type="Timestamp" />
+		<operation_date cba="n" type="Timestamp" />
 	</CAES>
 	<CHP type="generator">
 		<name type="string" />
@@ -214,6 +217,9 @@
 		<yearly_data_filename cba="n" optional="y" type="string" />
 		<customer_tariff_filename cba='y' type="string" />
 		<analysis_horizon_mode cba="n" allowed_values="1|2|3" type="int" />
+		<federal_tax_rate cba="n" max="100.0" min="0.0" type="float" />
+		<state_tax_rate cba="n" max="100.0" min="0.0" type="float" />
+		<property_tax_rate cba="n" max="100.0" min="0.0" type="float" />
 	</Finance>
 	<Results type="command" max_num="1">
 		<dir_absolute_path cba="n" type="string" />

@@ -16,6 +16,7 @@ import logging
 import cvxpy as cvx
 from MicrogridDER.Sizing import Sizing
 from storagevet.Technology import BatteryTech
+from MicrogridDER.DERExtension import DERExtension
 
 
 u_logger = logging.getLogger('User')
@@ -23,7 +24,7 @@ e_logger = logging.getLogger('Error')
 DEBUG = False
 
 
-class BatterySizing(BatteryTech.Battery, Sizing):
+class Battery(BatteryTech.Battery, Sizing, DERExtension):
     """ Battery class that inherits from Storage.
 
     """
@@ -38,6 +39,7 @@ class BatterySizing(BatteryTech.Battery, Sizing):
 
         # create generic storage object
         BatteryTech.Battery.__init__(self, params)
+        DERExtension.__init__(self, params)
         Sizing.__init__(self)
 
         self.user_duration = params['duration_max']
@@ -100,7 +102,7 @@ class BatterySizing(BatteryTech.Battery, Sizing):
     def energy_capacity(self, solution=False):
         """
 
-        Returns: the maximum charge that can be attained
+        Returns: the maximum energy that can be attained
 
         """
         if not solution:
@@ -111,6 +113,35 @@ class BatterySizing(BatteryTech.Battery, Sizing):
             except AttributeError:
                 max_rated = self.ene_max_rated
             return max_rated
+
+    def operational_max_energy(self, solution=False):
+        """
+
+        Returns: the maximum energy that should stored in this DER based on user inputs
+
+        """
+        if not solution:
+            return self.effective_soe_max
+        else:
+            try:
+                effective_soe_max = self.effective_soe_max.value
+            except AttributeError:
+                effective_soe_max = self.effective_soe_max
+            return effective_soe_max
+
+    def operational_min_energy(self, solution=False):
+        """
+
+        Returns: the minimum energy that should stored in this DER based on user inputs
+        """
+        if not solution:
+            return self.effective_soe_min
+        else:
+            try:
+                effective_soe_min = self.effective_soe_min.value
+            except AttributeError:
+                effective_soe_min = self.effective_soe_min
+            return effective_soe_min
 
     def constraints(self, mask):
         """ Builds the master constraint list for the subset of timeseries data being optimized.
@@ -151,19 +182,11 @@ class BatterySizing(BatteryTech.Battery, Sizing):
         Returns: A dataframe indexed by the terms that describe this DER's size and captial costs.
 
         """
-        # obtain the size of the battery, these may or may not be optimization variable
-        # therefore we check to see if it is by trying to get its value attribute in a try-except statement.
-        # If there is an error, then we know that it was user inputted and we just take that value instead.
-        try:
-            energy_rated = self.ene_max_rated.value
-        except AttributeError:
-            energy_rated = self.ene_max_rated
-
         sizing_results = {
             'DER': self.name,
-            'Energy Rating (kWh)': energy_rated,
-            'Charge Rating (kW)': self.charge_capacity(),
-            'Discharge Rating (kW)': self.discharge_capacity(),
+            'Energy Rating (kWh)': self.energy_capacity(solution=True),
+            'Charge Rating (kW)': self.charge_capacity(solution=True),
+            'Discharge Rating (kW)': self.discharge_capacity(solution=True),
             'Round Trip Efficiency (%)': self.rte,
             'Lower Limit on SOC (%)': self.llsoc,
             'Upper Limit on SOC (%)': self.ulsoc,
@@ -186,3 +209,28 @@ class BatterySizing(BatteryTech.Battery, Sizing):
             energy_rated = self.ene_max_rated
 
         return energy_rated / self.discharge_capacity(solution=True)
+
+    def update_for_evaluation(self, input_dict):
+        """ Updates price related attributes with those specified in the input_dictionary
+
+        Args:
+            input_dict: hold input data, keys are the same as when initialized
+
+        """
+        super().update_for_evaluation(input_dict)
+        fixed_om = input_dict.get('fixedOM')
+        if fixed_om is not None:
+            self.fixedOM_perKW = fixed_om
+
+        variable_om = input_dict.get('OMexpenses')
+        if variable_om is not None:
+            self.variable_om = variable_om*100
+
+        if self.incl_startup:
+            p_start_ch = input_dict.get('p_start_ch')
+            if p_start_ch is not None:
+                self.p_start_ch = p_start_ch * 100
+
+            p_start_dis = input_dict.get('p_start_dis')
+            if p_start_dis is not None:
+                self.p_start_dis = p_start_dis * 100

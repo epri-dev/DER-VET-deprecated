@@ -13,10 +13,10 @@ __email__ = ['hnathwani@epri.com', 'mevans@epri.com']
 __version__ = 'beta'  # beta version
 
 from MicrogridValueStreams.Reliability import Reliability
-from MicrogridDER.BatterySizing import BatterySizing
-from MicrogridDER.CAESSizing import CAESSizing
-from MicrogridDER.PVSizing import PVSizing
-from MicrogridDER.ICESizing import ICESizing
+from MicrogridDER.Battery import Battery
+from MicrogridDER.CAES import CAES
+from MicrogridDER.PV import PV
+from MicrogridDER.ICE import ICE
 from MicrogridDER.LoadControllable import ControllableLoad
 from MicrogridDER.CHP import CHP
 from storagevet.ValueStreams.DAEnergyTimeShift import DAEnergyTimeShift
@@ -69,12 +69,12 @@ class MicrogridScenario(Scenario):
 
         """
         technology_class_map = {
-            'CAES': CAESSizing,
-            'Battery': BatterySizing,
-            'PV': PVSizing,
-            'ICE': ICESizing,
-            'Load': ControllableLoad,
-            'CHP': CHP
+            'CAES': CAES,
+            'Battery': Battery,
+            'PV': PV,
+            'ICE': ICE,
+            'CHP': CHP,
+            'Load': ControllableLoad
         }
 
         value_stream_class_map = {
@@ -113,6 +113,9 @@ class MicrogridScenario(Scenario):
             if self.service_agg.post_facto_reliability_only():
                 # whole sale markets
                 e_logger.error('Params Error: trying to size and preform post facto calculations only')
+                return False
+            if self.poi.is_dcp_error(self.incl_binary):
+                e_logger.error('Params Error: trying to size power and use binary formulation results in nonlinear models')
                 return False
             # calculate the annuity scalar that will convert any yearly costs into a present value
             alpha = CostBenefitAnalysis.annuity_scalar(**self.finance_inputs)

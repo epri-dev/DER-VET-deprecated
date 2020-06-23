@@ -15,9 +15,10 @@ __version__ = 'beta'  # beta version
 import cvxpy as cvx
 from storagevet.Technology import InternalCombustionEngine
 from MicrogridDER.Sizing import Sizing
+from MicrogridDER.DERExtension import DERExtension
 
 
-class ICESizing(InternalCombustionEngine.ICE, Sizing):
+class ICE(InternalCombustionEngine.ICE, Sizing, DERExtension):
     """ An ICE generator
 
     """
@@ -29,6 +30,7 @@ class ICESizing(InternalCombustionEngine.ICE, Sizing):
             params (dict): Dict of parameters for initialization
         """
         Sizing.__init__(self)
+        DERExtension.__init__(self, params)
         self.n_min = params['n_min']  # generators
         self.n_max = params['n_max']  # generators
         if self.being_sized():
@@ -123,3 +125,31 @@ class ICESizing(InternalCombustionEngine.ICE, Sizing):
 
         """
         return self.n_min != self.n_max
+
+    def update_for_evaluation(self, input_dict):
+        """ Updates price related attributes with those specified in the input_dictionary
+
+        Args:
+            input_dict: hold input data, keys are the same as when initialized
+
+        """
+        super().update_for_evaluation(input_dict)
+        # ccost = input_dict.get('ccost')
+        # if ccost is not None:
+        #     self.capital_cost_function[0] = ccost
+        #
+        ccost_kw = input_dict.get('ccost_kW')
+        if ccost_kw is not None:
+            self.capital_cost_function[1] = ccost_kw
+
+        fuel_cost = input_dict.get('fuel_cost')
+        if fuel_cost is not None:
+            self.fuel_cost = fuel_cost
+
+        variable_cost = input_dict.get('variable_om_cost')
+        if variable_cost is not None:
+            self.variable_om = variable_cost
+
+        fixed_om_cost = input_dict.get('fixed_om_cost')
+        if variable_cost is not None:
+            self.fixed_om = fixed_om_cost

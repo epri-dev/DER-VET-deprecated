@@ -3,7 +3,7 @@ Sizing Module
 
 """
 
-__author__ = 'Miles Evans and Evan Giarta'
+__author__ = 'Halley Nathwani'
 __copyright__ = 'Copyright 2018. Electric Power Research Institute (EPRI). All Rights Reserved.'
 __credits__ = ['Miles Evans', 'Andres Cortes', 'Evan Giarta', 'Halley Nathwani', 'Micah Botkin-Levy', 'Yekta Yazar']
 __license__ = 'EPRI'
