@@ -467,7 +467,7 @@ class ParamsDER(Params):
             if self.Scenario['incl_site_load'] != 1:
                 self.record_input_error('Load is active, so incl_site_load should be 1')
             # check to make sure data was included
-            for id_str, load_inputs in self.Load:
+            for id_str, load_inputs in self.Load.items():
                 try:
                     load_inputs['site_load'] = time_series.loc[:, f'Site Load (kW)/{id_str}']
                 except KeyError:
