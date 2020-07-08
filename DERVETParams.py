@@ -128,6 +128,8 @@ class ParamsDER(Params):
         super().__init__()
         self.Reliability = self.read_and_validate('Reliability')  # Value Stream
         self.Load = self.read_and_validate('ControllableLoad')  # DER
+        self.DieselGenset = self.read_and_validate('DieselGenset')
+        self.CT = self.read_and_validate('CT')
         self.CHP = self.read_and_validate('CHP')
 
     @classmethod
@@ -155,9 +157,11 @@ class ParamsDER(Params):
         template['ders_values'] = {
             'Battery': cls.read_and_validate_evaluation('Battery'),
             'CAES': cls.read_and_validate_evaluation('CAES'),
+            'CT': cls.read_and_validate_evaluation('CT'),
             'CHP': cls.read_and_validate_evaluation('CHP'),
             'PV': cls.read_and_validate_evaluation('PV'),  # cost_per_kW (and then recalculate capex)
             'ICE': cls.read_and_validate_evaluation('ICE'),  # fuel_price,
+            'DieselGenset': cls.read_and_validate_evaluation('DieselGenset'),  # fuel_price,
             # 'ControllableLoad': cls.read_and_validate_evaluation('ControllableLoad')
         }
 
@@ -411,6 +415,7 @@ class ParamsDER(Params):
         """ Interprets user given data and prepares it for each technology.
 
         """
+        # TODO - redo the error checking in this method; it has become gross --AE
         time_series = self.Scenario['time_series']
         sizing_optimization = False
         if len(self.Battery):
@@ -430,6 +435,31 @@ class ParamsDER(Params):
                     sizing_optimization = True
                 if ice_input['n_min'] > ice_input['n_max']:
                     self.record_input_error(f'ICE {id_str} must have n_min < n_max')
+
+        if len(self.CT):
+            # add scenario case parameters to CT parameter dictionary
+            for id_str, ct_input in self.CT.items():
+                if ct_input['n_min'] != ct_input['n_max']:
+                    sizing_optimization = True
+                if ct_input['n_min'] > ct_input['n_max']:
+                    self.record_input_error(f'CT {id_str} must have n_min < n_max')
+
+        if len(self.DieselGenset):
+            # add scenario case parameters to DG parameter dictionary
+            for id_str, dg_input in self.DieselGenset.items():
+                if dg_input['n_min'] != dg_input['n_max']:
+                    sizing_optimization = True
+                if dg_input['n_min'] > dg_input['n_max']:
+                    self.record_input_error(f'DieselGenset {id_str} must have n_min < n_max')
+
+        if len(self.CHP):
+            # add scenario case parameters to CHP parameter dictionary
+            for id_str, chp_input in self.CHP.items():
+                if chp_input['n_min'] != chp_input['n_max']:
+                    sizing_optimization = True
+                if chp_input['n_min'] > chp_input['n_max']:
+                    self.record_input_error(f'CHP {id_str} must have n_min < n_max')
+
         if sizing_optimization and not self.Scenario['n'] == 'year':  # todo: move to b4 opt set up. w/ other sizing checks --hn
             self.record_input_error('Trying to size without setting the optimization window to \'year\'')
 
@@ -460,6 +490,17 @@ class ParamsDER(Params):
                                                                                        self.Scenario['monthly_data'].loc[:, ['Natural Gas Price ($/MillionBTU)']])})
                 except KeyError:
                     self.record_input_error("Missing 'Natural Gas Price ($/MillionBTU)' from monthly data input")
+
+        if len(self.CT):
+            for id_str, ct_inputs in self.CT:
+                ct_inputs.update({'dt': self.Scenario['dt']})
+
+                try:
+                    ct_inputs.update({'natural_gas_price': self.monthly_to_timeseries(self.Scenario['frequency'],
+                                                                                       self.Scenario['monthly_data'].loc[:, ['Natural Gas Price ($/MillionBTU)']])})
+                except KeyError:
+                    self.record_input_error("Missing 'Natural Gas Price ($/MillionBTU)' from monthly data input")
+
 
         super().load_technology()
 

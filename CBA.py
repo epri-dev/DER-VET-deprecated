@@ -229,7 +229,7 @@ class CostBenefitAnalysis(Financial):
                 tax_schedule = tax_schedule + list(np.zeros(proj_years - len(tax_schedule)))
             else:
                 tax_schedule = tax_schedule[:proj_years]
-            capital_costs += np.multiply(tax_schedule, proforma.loc['CAPEX Year', der_inst.zero_column_name])
+            capital_costs += np.multiply(tax_schedule, proforma.loc['CAPEX Year', der_inst.zero_column_name()])
         yearly_net += capital_costs
 
         # 2) Calculate State tax based on the net cash flows in each year
