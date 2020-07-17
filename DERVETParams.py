@@ -451,6 +451,7 @@ class ParamsDER(Params):
                     sizing_optimization = True
                 if dg_input['n_min'] > dg_input['n_max']:
                     self.record_input_error(f'DieselGenset {id_str} must have n_min < n_max')
+                dg_input.update({'dt': self.Scenario['dt']})
 
         if len(self.CHP):
             # add scenario case parameters to CHP parameter dictionary

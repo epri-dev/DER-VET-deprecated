@@ -28,7 +28,7 @@ class CHP(CT):
             params (dict): Dict of parameters for initialization
         """
         # base class is CT
-        self().__init__(self, params)
+        super().__init__(params)
 
         # overrides
         self.tag = 'CHP'
@@ -53,8 +53,6 @@ class CHP(CT):
             'heat': cvx.Variable(shape=size, name=f'{self.name}-heatP', nonneg=True),
             'udis': cvx.Variable(shape=size, name=f'{self.name}-udis'), # can go either up or down
         })
-
-        self.variable_names = self.variables_dict.keys()
 
     def constraints(self, mask):
 

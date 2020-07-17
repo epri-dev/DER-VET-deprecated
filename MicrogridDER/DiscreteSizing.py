@@ -12,6 +12,7 @@ __email__ = ['hnathwani@epri.com', 'egiarta@epri.com', 'mevans@epri.com']
 __version__ = 'beta'
 
 import numpy as np
+import cvxpy as cvx
 
 
 class DiscreteSizing:

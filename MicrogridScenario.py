@@ -62,6 +62,11 @@ class MicrogridScenario(Scenario):
         Scenario.__init__(self, input_tree)
 
         self.value_stream_input_map.update({'Reliability': input_tree.Reliability})
+        self.technology_inputs_map.update({
+            'DieselGenset': input_tree.DieselGenset,
+            'CT': input_tree.CT,
+            'CHP': input_tree.CHP,
+        })
 
         u_logger.info("ScenarioSizing initialized ...")
 

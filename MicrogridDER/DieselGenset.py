@@ -28,8 +28,8 @@ class DieselGenset(ICE):
             params (dict): Dict of parameters for initialization
         """
         # base class is ICE
-        super().__init__(self, params)
+        super().__init__(params)
 
         # overrides
         self.tag = 'DieselGenset'
-        self.self.can_participate_in_market_services = False
+        self.can_participate_in_market_services = False

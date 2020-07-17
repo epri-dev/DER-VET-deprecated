@@ -1,5 +1,5 @@
 """
-Sizing Module
+Continuous Sizing Module
 
 """
 
@@ -16,7 +16,7 @@ import numpy as np
 
 class ContinuousSizing:
     """ This class is to be inherited by DER classes that want to also define the ability
-    to optimal size of itself
+    to optimally size itself
 
     """
 
