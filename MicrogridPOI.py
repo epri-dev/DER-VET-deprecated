@@ -47,6 +47,14 @@ class MicrogridPOI(POI):
                 return True
         return False
 
+    def grab_active_ders(self, indx):
+        """ drops DER that are not considered active in the optimization window's horizon
+
+        """
+        year = indx.year[0]
+        active_ders = [der_instance for der_instance in self.der_list if der_instance.operational(year)]
+        self.active_ders = active_ders
+
     def is_dcp_error(self, is_binary_formulation):
         """ If trying to sizing power of batteries (or other DERs) AND using the binary formulation (of ESS)
         our linear model will not be linear anymore

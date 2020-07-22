@@ -43,3 +43,11 @@ class ICE(RotatingGeneratorSizing, InternalCombustionEngine.ICE):
         fuel_cost = input_dict.get('fuel_cost')
         if fuel_cost is not None:
             self.fuel_cost = fuel_cost
+
+    def replacement_cost(self):
+        """
+
+        Returns: the cost of replacing this DER
+
+        """
+        return np.dot(self.replacement_cost_function, [self.number_of_generators(), self.discharge_capacity()])

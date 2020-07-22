@@ -16,7 +16,6 @@ import pandas as pd
 import logging
 from pathlib import Path
 from storagevet.Result import Result
-from CBA import CostBenefitAnalysis
 
 
 u_logger = logging.getLogger('User')
@@ -34,7 +33,7 @@ class MicrogridResult(Result):
             Args:
                 scenario (Scenario.Scenario): scenario object after optimization has run to completion
         """
-        super().__init__(scenario, CostBenefitAnalysis)
+        super().__init__(scenario)
         self.sizing_df = pd.DataFrame()
 
     def collect_results(self):
@@ -68,7 +67,8 @@ class MicrogridResult(Result):
         case in question.
 
         """
-        super().calculate_cba(post_facto_only=self.service_agg.post_facto_reliability_only())
+        if not (self.service_agg.is_deferral_only() or self.service_agg.post_facto_reliability_only()):
+            super().calculate_cba()
 
     def save_as_csv(self, instance_key, sensitivity=False):
         """ Save useful DataFrames to disk in csv files in the user specified path for analysis.
@@ -83,10 +83,11 @@ class MicrogridResult(Result):
         """
         super().save_as_csv(instance_key, sensitivity)
         if sensitivity:
-            savepath = self.dir_abs_path + "\\" + str(instance_key)
+            savepath = self.dir_abs_path / str(instance_key)
         else:
             savepath = self.dir_abs_path
         self.sizing_df.to_csv(path_or_buf=Path(savepath, 'size' + self.csv_label + '.csv'))
+        self.financials.equipment_lifetime_report.to_csv(path_or_buf=Path(savepath, 'equipment_lifetimes' + self.csv_label + '.csv'))
         if self.verbose:
-            print('DER results have been saved to: ' + savepath)
-        u_logger.info('DER results have been saved to: ' + savepath)
+            print(f'DER results have been saved to: {savepath}')
+        u_logger.info(f'DER results have been saved to: {savepath}')

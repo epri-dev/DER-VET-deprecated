@@ -15,7 +15,9 @@ __version__ = 'beta'  # beta version
 import cvxpy as cvx
 from storagevet.Technology import PVSystem
 from MicrogridDER.Sizing import Sizing
+import pandas as pd
 from MicrogridDER.DERExtension import DERExtension
+import numpy as np
 
 
 class PV(PVSystem.PV, Sizing, DERExtension):
@@ -44,6 +46,20 @@ class PV(PVSystem.PV, Sizing, DERExtension):
             self.rated_capacity = cvx.Variable(name='PV rating', integer=True)
             self.size_constraints += [cvx.NonPos(-self.rated_capacity)]
 
+    def get_discharge(self, mask):
+        """ The effective discharge of this DER
+        Args:
+            mask (DataFrame): A boolean array that is true for indices corresponding to time_series data included
+                in the subs data set
+
+        Returns: the discharge as a function of time for the
+
+        """
+        if self.being_sized():
+            return cvx.Parameter(shape=sum(mask), name='pv/rated gen', value=self.gen_per_rated.loc[mask].values) * self.rated_capacity
+        else:
+            return super(PV, self).get_discharge(mask)
+
     def constraints(self, mask):
         """ Builds the master constraint list for the subset of timeseries data being optimized.
 
@@ -68,9 +84,24 @@ class PV(PVSystem.PV, Sizing, DERExtension):
         costs = dict()
 
         if self.being_sized():
-            costs.update({self.name + 'capex': self.get_capex})
+            costs.update({self.name + 'capex': self.get_capex()})
 
         return costs
+
+    def timeseries_report(self):
+        """ Summaries the optimization results for this DER.
+
+        Returns: A timeseries dataframe with user-friendly column headers that summarize the results
+            pertaining to this instance
+
+        """
+        results = super(PV, self).timeseries_report()
+        if self.being_sized() and not self.curtail:
+            # convert expressions into values
+            tech_id = self.unique_tech_id()
+            results[tech_id + ' Generation (kW)'] = self.maximum_generation().value
+            results[tech_id + ' Maximum (kW)'] = self.maximum_generation().value
+        return results
 
     def sizing_summary(self):
         """
@@ -97,6 +128,18 @@ class PV(PVSystem.PV, Sizing, DERExtension):
 
         """
         super(PV, self).update_for_evaluation(input_dict)
-        cost_per_kw = input_dict.get('cost_per_kW')
+        cost_per_kw = input_dict.get('ccost_kW')
         if cost_per_kw is not None:
             self.capital_cost_function = cost_per_kw
+
+    def replacement_cost(self):
+        """
+
+        Returns: the capex of this DER for optimization
+
+        """
+        try:
+            rated_capacity = self.rated_capacity.value
+        except AttributeError:
+            rated_capacity = self.rated_capacity
+        return np.dot(self.replacement_cost_function, [rated_capacity])

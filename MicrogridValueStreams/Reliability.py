@@ -270,7 +270,7 @@ class Reliability(ValueStream):
 
         for der_inst in der_list:
             if der_inst.technology_type == 'Intermittent Resource':
-                total_pv_max += der_inst.maximum_generation(None)
+                total_pv_max += der_inst.maximum_generation()
             if der_inst.technology_type == 'Generator':
                 total_dg_max += der_inst.discharge_capacity()
             if der_inst.technology_type == 'Energy Storage System':

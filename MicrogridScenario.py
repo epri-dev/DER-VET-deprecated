@@ -105,6 +105,22 @@ class MicrogridScenario(Scenario):
         self.poi = MicrogridPOI(self.poi_inputs, self.technology_inputs_map, technology_class_map)
         self.service_agg = MicrogridServiceAggregator(self.value_stream_input_map, value_stream_class_map)
 
+    def initialize_cba(self):
+        self.financials = CostBenefitAnalysis(self.finance_inputs)
+        # set the project end year
+        self.end_year = self.financials.find_end_year(self.start_year, self.end_year, self.poi.der_list)
+        if self.end_year.year == 0:
+            # some type error was recorded. throw error and exit
+            raise Exception("Error occurred while trying to determine the end of the analysis." +
+                            " Please check the error_log.log in your results folder for more information.")
+
+        # update opt_years based on this new end_year
+        add_analysis_years = self.financials.get_years_after_failures(self.start_year, self.end_year, self.poi.der_list)
+        print(add_analysis_years)
+        set_opt_yrs = set(self.opt_years)
+        set_opt_yrs.update(add_analysis_years)
+        self.opt_years = list(set_opt_yrs)
+
     def optimize_problem_loop(self, **kwargs):
         """ This function selects on opt_agg of data in time_series and calls optimization_problem on it.
 
@@ -126,7 +142,7 @@ class MicrogridScenario(Scenario):
                 e_logger.error('Params Error: trying to size power and use binary formulation results in nonlinear models')
                 return False
             # calculate the annuity scalar that will convert any yearly costs into a present value
-            alpha = CostBenefitAnalysis.annuity_scalar(**self.finance_inputs)
+            alpha = self.financials.annuity_scalar(self.start_year, self.end_year, self.opt_years)
 
         if self.service_agg.is_deferral_only() or self.service_agg.post_facto_reliability_only():
             u_logger.info("Only active Value Stream is Deferral or post facto only, so not optimizations will run...")
@@ -140,9 +156,15 @@ class MicrogridScenario(Scenario):
 
             # used to select rows from time_series relevant to this optimization window
             mask = self.optimization_levels.predictive == opt_period
+            sub_index = self.optimization_levels.loc[mask].index
+
+            # drop any ders that are not operational
+            self.poi.grab_active_ders(sub_index)
+            if not len(self.poi.active_ders):
+                return True
 
             # apply past degradation in ESS objects (NOTE: if no degredation module applies to specific ESS tech, then nothing happens)
-            for der in self.poi.der_list:
+            for der in self.poi.active_ders:
                 if der.technology_type == "Energy Storage System":
                     der.apply_past_degredation(opt_period)
 
@@ -156,8 +178,7 @@ class MicrogridScenario(Scenario):
             objective_values = self.run_optimization(functions, constraints, opt_period)
 
             # calculate degradation in ESS objects (NOTE: if no degredation module applies to specific ESS tech, then nothing happens)
-            sub_index = self.optimization_levels.loc[mask].index
-            for der in self.poi.der_list:
+            for der in self.poi.active_ders:
                 if der.technology_type == "Energy Storage System":
                     der.calc_degradation(opt_period, sub_index[0], sub_index[-1])
 
@@ -165,7 +186,7 @@ class MicrogridScenario(Scenario):
             self.objective_values = pd.concat([self.objective_values, objective_values])
 
             # record the solution of the variables and run again
-            for der in self.poi.der_list:
+            for der in self.poi.active_ders:
                 der.save_variable_results(sub_index)
             for vs in self.service_agg.value_streams.values():
                 vs.save_variable_results(sub_index)

@@ -14,14 +14,13 @@ __version__ = 'beta'  # beta version
 
 from storagevet.Technology import CAESTech
 import logging
-from MicrogridDER.Sizing import Sizing
-from MicrogridDER.DERExtension import DERExtension
+from MicrogridDER.ESSSizing import ESSSizing
 
 u_logger = logging.getLogger('User')
 e_logger = logging.getLogger('Error')
 
 
-class CAES(CAESTech.CAES, Sizing, DERExtension):
+class CAES(CAESTech.CAES, ESSSizing):
     """ CAES class that inherits from StorageVET. this object does not size.
 
     """
@@ -32,33 +31,23 @@ class CAES(CAESTech.CAES, Sizing, DERExtension):
         Args:
             params (dict): Dict of parameters for initialization
         """
-        Sizing.__init__(self)
-        DERExtension.__init__(self, params)
         CAESTech.CAES.__init__(self, params)
+        ESSSizing.__init__(self, self.technology_type, params)
 
-    def sizing_summary(self):
+    def objective_function(self, mask, annuity_scalar=1):
+        """ Generates the objective function related to a technology. Default includes O&M which can be 0
+
+        Args:
+            mask (Series): Series of booleans used, the same length as case.power_kw
+            annuity_scalar (float): a scalar value to be multiplied by any yearly cost or benefit that helps capture the cost/benefit over
+                    the entire project lifetime (only to be set iff sizing, else alpha should not affect the aobject function)
+
+        Returns:
+            self.costs (Dict): Dict of objective costs
         """
-
-        Returns: A dictionary describe this DER's size and captial costs.
-
-        """
-        sizing_dict = {
-            'DER': self.name,
-            'Energy Rating (kWh)': self.ene_max_rated,
-            'Charge Rating (kW)': self.ch_max_rated,
-            'Discharge Rating (kW)': self.dis_max_rated,
-            'Round Trip Efficiency (%)': self.rte,
-            'Lower Limit on SOC (%)': self.llsoc,
-            'Upper Limit on SOC (%)': self.ulsoc,
-            'Duration (hours)': self.ene_max_rated / self.dis_max_rated,
-            'Capital Cost ($)': self.capital_cost_function[0],
-            'Capital Cost ($/kW)': self.capital_cost_function[1],
-            'Capital Cost ($/kWh)': self.capital_cost_function[2]
-        }
-        if (sizing_dict['Duration (hours)'] > 24).any():
-            print('The duration of an Energy Storage System is greater than 24 hours!')
-
-        return sizing_dict
+        costs = CAESTech.CAES.objective_function(self, mask, annuity_scalar)
+        if self.being_sized():
+            costs.update({self.name + 'capex': self.get_capex()})
 
     def update_for_evaluation(self, input_dict):
         """ Updates price related attributes with those specified in the input_dictionary
@@ -68,23 +57,7 @@ class CAES(CAESTech.CAES, Sizing, DERExtension):
 
         """
         super().update_for_evaluation(input_dict)
-        fixed_om = input_dict.get('fixedOM')
-        if fixed_om is not None:
-            self.fixedOM_perKW = fixed_om
-
-        variable_om = input_dict.get('OMexpenses')
-        if variable_om is not None:
-            self.variable_om = variable_om * 100
 
         heat_rate_high = input_dict.get('heat_rate_high')
         if heat_rate_high is not None:
             self.heat_rate_high = heat_rate_high
-
-        if self.incl_startup:
-            p_start_ch = input_dict.get('p_start_ch')
-            if p_start_ch is not None:
-                self.p_start_ch = p_start_ch
-
-            p_start_dis = input_dict.get('p_start_dis')
-            if p_start_dis is not None:
-                self.p_start_dis = p_start_dis
