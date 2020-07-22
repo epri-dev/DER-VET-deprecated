@@ -236,10 +236,10 @@ class DERExtension:
         start_year = indx[1]
         if self.construction_year.year < start_year.year:
             return pd.DataFrame(index=indx)
-        capex_df = pd.DataFrame({self.zero_column_name: np.zeros(len(indx))}, index=indx)
+        capex_df = pd.DataFrame({self.zero_column_name(): np.zeros(len(indx))}, index=indx)
         try:
             capex = self.get_capex().value
         except AttributeError:
             capex = self.get_capex()
-        capex_df.loc[self.construction_year, self.zero_column_name] = capex
+        capex_df.loc[self.construction_year, self.zero_column_name()] = capex
         return capex_df

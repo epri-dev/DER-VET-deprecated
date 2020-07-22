@@ -14,11 +14,11 @@ __version__ = 'beta'  # beta version
 
 import cvxpy as cvx
 from MicrogridDER.DERExtension import DERExtension
-from MicrogridDER.DiscreteSizing import DiscreteSizing
+from MicrogridDER.ContinuousSizing import ContinuousSizing
 from storagevet.Technology.RotatingGenerator import RotatingGenerator
 
 
-class RotatingGeneratorSizing(DiscreteSizing, DERExtension, RotatingGenerator):
+class RotatingGeneratorSizing(ContinuousSizing, DERExtension, RotatingGenerator):
     """ An rotating generator, with sizing optimization
 
     """
@@ -29,9 +29,9 @@ class RotatingGeneratorSizing(DiscreteSizing, DERExtension, RotatingGenerator):
         Args:
             params (dict): Dict of parameters for initialization
         """
-        DERExtension.__init__(self, params)
-        DiscreteSizing.__init__(self, params)
         RotatingGenerator.__init__(self, gen_type, params)
+        DERExtension.__init__(self, params)
+        ContinuousSizing.__init__(self, params)
 
     def constraints(self, mask):
         """ Builds the master constraint list for the subset of timeseries data being optimized.
@@ -51,7 +51,7 @@ class RotatingGeneratorSizing(DiscreteSizing, DERExtension, RotatingGenerator):
         if not self.being_sized():
             constraint_list += [parent_constraints[1]]
         # sizing constraints
-        constraint_list += DiscreteSizing.constraints(self, mask)
+        constraint_list += ContinuousSizing.constraints(self, mask)
 
         return constraint_list
 
@@ -67,7 +67,7 @@ class RotatingGeneratorSizing(DiscreteSizing, DERExtension, RotatingGenerator):
             self.costs (Dict): Dict of objective costs
         """
         costs = RotatingGenerator.objective_function(self, mask, annuity_scalar)
-        costs.update(DiscreteSizing.objective_function(self, mask, annuity_scalar))
+        costs.update(ContinuousSizing.objective_function(self, mask, annuity_scalar))
 
         return costs
 

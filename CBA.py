@@ -294,7 +294,7 @@ class CostBenefitAnalysis(Financial):
             # replace capital cost columns with economic_carrying cost
             ecc_df = tech.economic_carrying_cost(self.npv_discount_rate, proforma.index)
             # drop original Capital Cost
-            proforma = proforma.drop(columns=[tech.zero_column_name])
+            proforma = proforma.drop(columns=[tech.zero_column_name()])
             # add the ECC to the proforma
             proforma = proforma.join(ecc_df)
         # sort alphabetically

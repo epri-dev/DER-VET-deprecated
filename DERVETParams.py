@@ -478,10 +478,8 @@ class ParamsDER(Params):
         if len(self.ICE):
             # add scenario case parameters to ICE parameter dictionary
             for id_str, ice_input in self.ICE.items():
-                if ice_input['n_min'] != ice_input['n_max']:
+                if not ice_input['rated_power']:
                     sizing_optimization = True
-                if ice_input['n_min'] > ice_input['n_max']:
-                    self.record_input_error(f'ICE {id_str} must have n_min < n_max')
 
         if len(self.CT):
             # add scenario case parameters to CT parameter dictionary
