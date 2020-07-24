@@ -28,16 +28,13 @@ class ESSSizing(EnergyStorage, DERExtension, Sizing):
 
     """
 
-    def __init__(self, tag, params):
+    def __init__(self, params):
         """ Initialize all technology with the following attributes.
 
         Args:
-            tag (str): A unique string name for the technology being added
             params (dict): Dict of parameters
         """
-        EnergyStorage.__init__(self, tag, params)
-        DERExtension.__init__(self, params)
-        Sizing.__init__(self)
+        super().__init__(params)
         # if the user inputted the energy rating as 0, then size for energy rating
         if not self.ene_max_rated:
             self.ene_max_rated = cvx.Variable(name='Energy_cap', integer=True)

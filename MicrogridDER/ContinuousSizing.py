@@ -3,7 +3,7 @@ Continuous Sizing Module
 
 """
 
-__author__ = 'Halley Nathwani'
+__author__ = 'Andrew Etringer and Halley Nathwani'
 __copyright__ = 'Copyright 2018. Electric Power Research Institute (EPRI). All Rights Reserved.'
 __credits__ = ['Miles Evans', 'Andres Cortes', 'Evan Giarta', 'Halley Nathwani', 'Micah Botkin-Levy', 'Yekta Yazar']
 __license__ = 'EPRI'
@@ -29,8 +29,7 @@ class ContinuousSizing:
 
         self.size_constraints = []
         if not self.rated_power:
-            self.n = 1
-            self.rated_power = cvx.Variable(integer=True, name='energy rating')
+            self.rated_power = cvx.Variable(integer=True, name=f'{self.name}rating')
             self.size_constraints += [cvx.NonPos(-self.rated_power)]
             if self.min_rated_power:
                 self.size_constraints += [cvx.NonPos(self.min_rated_power - self.rated_power)]

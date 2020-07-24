@@ -20,7 +20,7 @@ class Sizing:
 
     """
 
-    def __init__(self):
+    def __init__(self, params):
         self.size_constraints = []
 
     def being_sized(self):

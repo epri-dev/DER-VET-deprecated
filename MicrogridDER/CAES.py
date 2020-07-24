@@ -31,8 +31,7 @@ class CAES(CAESTech.CAES, ESSSizing):
         Args:
             params (dict): Dict of parameters for initialization
         """
-        CAESTech.CAES.__init__(self, params)
-        ESSSizing.__init__(self, self.technology_type, params)
+        super(CAES, self).__init__(params)
 
     def objective_function(self, mask, annuity_scalar=1):
         """ Generates the objective function related to a technology. Default includes O&M which can be 0

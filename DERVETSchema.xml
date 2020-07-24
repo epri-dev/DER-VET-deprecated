@@ -116,6 +116,7 @@
 		<variable_om_cost cba="y" min="0.0" type="float" />
 		<fixed_om_cost cba="y" min="0.0" type="float" />
 		<rated_power cba="n" min="0.0" type="float" />
+		<n min="0" type="int" />
 		<ccost cba="y" min="0.0" type="float" />
 		<ccost_kW cba="y" min="0.0" type="float" />
 		<construction_year cba="n" type="Period" />
