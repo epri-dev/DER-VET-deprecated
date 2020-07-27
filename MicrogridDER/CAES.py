@@ -13,11 +13,8 @@ __email__ = ['hnathwani@epri.com', 'mevans@epri.com']
 __version__ = 'beta'  # beta version
 
 from storagevet.Technology import CAESTech
-import logging
 from MicrogridDER.ESSSizing import ESSSizing
-
-u_logger = logging.getLogger('User')
-e_logger = logging.getLogger('Error')
+from ErrorHandelling import *
 
 
 class CAES(CAESTech.CAES, ESSSizing):
@@ -31,7 +28,19 @@ class CAES(CAESTech.CAES, ESSSizing):
         Args:
             params (dict): Dict of parameters for initialization
         """
-        super(CAES, self).__init__(params)
+        TellUser.debug(f"Initializing {__name__}")
+        super().__init__(params)  # CAESTech.CAES->ESSizing->EnergyStorage->DER->Sizing
+
+        # warn the user that the power/energy is 0
+        if not self.dis_max_rated:
+            TellUser.error(f"{self.unique_tech_id()} has a discharge value of 0. Did you mean to do this?")
+            raise ModelParameterError(f" Please check the size of {self.unique_tech_id()}")
+        if not self.ch_max_rated:
+            TellUser.error(f"{self.unique_tech_id()} has a charge value of 0. Did you mean to do this?")
+            raise ModelParameterError(f" Please check the size of {self.unique_tech_id()}")
+        if not self.ene_max_rated:
+            TellUser.error(f"{self.unique_tech_id()} has a energy value of 0. Did you mean to do this?")
+            raise ModelParameterError(f" Please check the size of {self.unique_tech_id()}")
 
     def objective_function(self, mask, annuity_scalar=1):
         """ Generates the objective function related to a technology. Default includes O&M which can be 0
@@ -44,7 +53,7 @@ class CAES(CAESTech.CAES, ESSSizing):
         Returns:
             self.costs (Dict): Dict of objective costs
         """
-        costs = CAESTech.CAES.objective_function(self, mask, annuity_scalar)
+        costs = super().objective_function(mask, annuity_scalar)
         if self.being_sized():
             costs.update({self.name + 'capex': self.get_capex()})
 

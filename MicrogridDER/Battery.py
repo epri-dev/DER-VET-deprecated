@@ -12,16 +12,11 @@ __maintainer__ = ['Halley Nathwani', 'Miles Evans']
 __email__ = ['hnathwani@epri.com', 'mevans@epri.com']
 __version__ = 'beta'  # beta version
 
-import logging
 import cvxpy as cvx
-from MicrogridDER.Sizing import Sizing
 from storagevet.Technology import BatteryTech
-from MicrogridDER.DERExtension import DERExtension
 from MicrogridDER.ESSSizing import ESSSizing
+from ErrorHandelling import *
 
-
-u_logger = logging.getLogger('User')
-e_logger = logging.getLogger('Error')
 DEBUG = False
 
 
@@ -37,14 +32,14 @@ class Battery(BatteryTech.Battery, ESSSizing):
         Args:
             params (dict): params dictionary from dataframe for one case
         """
-
-        # create generic storage object
-        super().__init__(params)
+        super().__init__(params)  # BatteryTech.Battery->ESSizing->EnergyStorage->DER->Sizing
 
         self.user_duration = params['duration_max']
 
         if self.user_duration:
-            self.size_constraints += [cvx.NonPos((self.ene_max_rated / self.dis_max_rated) - self.user_duration)]
+            # if self.is_discharge_sizing() and self.is_energy_sizing():
+            #     TellUser.error("Cannot set a")
+            self.size_constraints += [cvx.NonPos(self.ene_max_rated - self.user_duration*self.dis_max_rated)]
 
     def constraints(self, mask):
         """ Builds the master constraint list for the subset of timeseries data being optimized.
@@ -57,7 +52,5 @@ class Battery(BatteryTech.Battery, ESSSizing):
             A list of constraints that corresponds the battery's physical constraints and its service constraints
         """
 
-        constraint_list = BatteryTech.Battery.constraints(self, mask)
-        constraint_list += self.size_constraints
+        constraint_list = super().constraints(mask)  # BatteryTech.Battery->ESSSizing->EnergyStorage
         return constraint_list
-

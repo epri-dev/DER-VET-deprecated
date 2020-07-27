@@ -13,13 +13,8 @@ __version__ = 'beta'  # beta version
 
 
 import pandas as pd
-import logging
-from pathlib import Path
 from storagevet.Result import Result
-
-
-u_logger = logging.getLogger('User')
-e_logger = logging.getLogger('Error')
+from ErrorHandelling import *
 
 
 class MicrogridResult(Result):
@@ -60,7 +55,7 @@ class MicrogridResult(Result):
         self.drill_down_dict.update(self.service_agg.drill_down_dfs(monthly_data=self.monthly_data, time_series_data=self.time_series_data,
                                                                     technology_summary=self.technology_summary, sizing_df=self.sizing_df,
                                                                     der_list=self.poi.der_list))
-        u_logger.debug("Finished post optimization analysis")
+        TellUser.debug("Finished post optimization analysis")
 
     def calculate_cba(self):
         """ Calls all finacial methods that will result in a series of dataframes to describe the cost benefit analysis for the
@@ -88,6 +83,4 @@ class MicrogridResult(Result):
             savepath = self.dir_abs_path
         self.sizing_df.to_csv(path_or_buf=Path(savepath, 'size' + self.csv_label + '.csv'))
         self.financials.equipment_lifetime_report.to_csv(path_or_buf=Path(savepath, 'equipment_lifetimes' + self.csv_label + '.csv'))
-        if self.verbose:
-            print(f'DER results have been saved to: {savepath}')
-        u_logger.info(f'DER results have been saved to: {savepath}')
+        TellUser.info(f'DER results have been saved to: {savepath}')

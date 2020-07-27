@@ -12,17 +12,13 @@ __maintainer__ = ['Halley Nathwani', 'Miles Evans']
 __email__ = ['hnathwani@epri.com', 'mevans@epri.com']
 __version__ = 'beta'  # beta version
 
-import logging
 from storagevet.Finances import Financial
 import numpy as np
 import copy
 import pandas as pd
-
+from ErrorHandelling import *
 
 SATURDAY = 5
-
-u_logger = logging.getLogger('User')
-e_logger = logging.getLogger('Error')
 
 
 class CostBenefitAnalysis(Financial):
@@ -260,9 +256,9 @@ class CostBenefitAnalysis(Financial):
             for key, value in evaluation_dict.items():
                 try:
                     setattr(param_object, key, value)
-                    print('attribute (' + param_object.name + ': ' + key + ') set: ' + str(value)) if verbose else None
+                    TellUser.debug('attribute (' + param_object.name + ': ' + key + ') set: ' + str(value))
                 except KeyError:
-                    print('No attribute ' + param_object.name + ': ' + key) if verbose else None
+                    TellUser.debug('No attribute ' + param_object.name + ': ' + key)
 
     def proforma_report(self, technologies, valuestreams, results, start_year, end_year, opt_years):
         """ Calculates and returns the proforma

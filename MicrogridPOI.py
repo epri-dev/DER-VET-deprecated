@@ -12,13 +12,10 @@ __maintainer__ = ['Evan Giarta', 'Miles Evans']
 __email__ = ['egiarta@epri.com', 'mevans@epri.com']
 
 
-import logging
 import pandas as pd
 from storagevet.POI import POI
 import cvxpy as cvx
-
-e_logger = logging.getLogger('Error')
-u_logger = logging.getLogger('User')
+from ErrorHandelling import *
 
 
 class MicrogridPOI(POI):
@@ -30,6 +27,8 @@ class MicrogridPOI(POI):
     def __init__(self, params, technology_inputs_map, technology_class_map):
         super().__init__(params, technology_inputs_map, technology_class_map)
         self.is_sizing_optimization = self.check_if_sizing_ders()
+        if self.is_sizing_optimization:
+            self.error_checks_on_sizing()
 
     def check_if_sizing_ders(self):
         """ This method will iterate through the initialized DER instances and return a logical OR of all of their
@@ -55,6 +54,16 @@ class MicrogridPOI(POI):
         active_ders = [der_instance for der_instance in self.der_list if der_instance.operational(year)]
         self.active_ders = active_ders
 
+    def error_checks_on_sizing(self):
+        # perform error checks on DERs that are being sized
+        # collect errors and raise if any were found
+        errors_found = [1 if der.sizing_error() else 0 for der in self.der_list]
+        if sum(errors_found):
+            raise ParameterError(f'Sizing of DERs has an error. Please check error log.')
+
+    def is_any_sizable_der_missing_power_max(self):
+        return bool(sum([1 if not der_inst.max_power_defined else 0 for der_inst in self.der_list]))
+
     def is_dcp_error(self, is_binary_formulation):
         """ If trying to sizing power of batteries (or other DERs) AND using the binary formulation (of ESS)
         our linear model will not be linear anymore
@@ -68,8 +77,7 @@ class MicrogridPOI(POI):
         solve_for_size = False
         for der_instance in self.der_list:
             if der_instance.tag == 'Battery':
-                power_being_sizing = isinstance(der_instance.dis_max_rated, cvx.Variable) or isinstance(der_instance.ch_max_rated, cvx.Variable)
-                solve_for_size = solve_for_size or (power_being_sizing and is_binary_formulation)
+                solve_for_size = solve_for_size or (der_instance.is_power_sizing() and is_binary_formulation)
         return solve_for_size
 
     def sizing_summary(self):

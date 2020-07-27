@@ -34,10 +34,7 @@ from MicrogridScenario import MicrogridScenario
 from DERVETParams import ParamsDER
 from MicrogridResult import MicrogridResult
 from storagevet.Visualization import Visualization
-
-
-e_logger = logging.getLogger('Error')
-u_logger = logging.getLogger('User')
+from ErrorHandelling import *
 
 
 class DERVET:
@@ -65,7 +62,6 @@ class DERVET:
         # Initialize the Params Object from Model Parameters and Simulation Cases
         self.cases = ParamsDER.initialize(model_parameters_path, self.verbose)
         self.results = MicrogridResult.initialize(ParamsDER.results_inputs, ParamsDER.case_definitions)
-        u_logger.info('Successfully initialized the Params class with the XML file.')
 
         if self.verbose:
             Visualization(ParamsDER).class_summary()
@@ -78,19 +74,14 @@ class DERVET:
             run.set_up_poi_and_service_aggregator()
             run.initialize_cba()
             run.fill_and_drop_extra_data()
-            continue_to_results = run.optimize_problem_loop()
+            run.optimize_problem_loop()
 
-            if continue_to_results:
-                MicrogridResult.add_instance(key, run)
-            else:
-                raise ArithmeticError("Further calculations requires that economic dispatch is solved, but "
-                                      + "no optimization was built or solved. Please check log files for more information. ")
+            MicrogridResult.add_instance(key, run)
 
         MicrogridResult.sensitivity_summary()
 
         ends = time.time()
-        print("DERVET runtime: ") if self.verbose else None
-        print(ends - starts) if self.verbose else None
+        TellUser.info(f"DERVET runtime: {ends - starts}")
 
         return MicrogridResult
 
@@ -117,5 +108,3 @@ if __name__ == '__main__':
 
     case = DERVET(arguments.parameters_filename, verbose=arguments.verbose, ignore_cba_valuation=True)
     case.solve()
-
-    # print("Program is done.")

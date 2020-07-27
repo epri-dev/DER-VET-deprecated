@@ -44,19 +44,26 @@
 		<energyprice_growth cba="n" max="100.0" min="0.0" type="float" />
 		<CombinedMarket allowed_values="1|0" cba="n" type="bool" />
 		<duration cba="n" max="24" min="0.0" type="float" />
+        <u_ts_constraints allowed_values="1|0" cba="n" type="bool" />
+        <d_ts_constraints allowed_values="1|0" cba="n" type="bool" />
 	</FR>
 	<LF type="service" max_num="1">
+		<energyprice_growth cba="n" max="100.0" min="0.0" type="float" />
 		<growth cba="n" max="100.0" min="0.0" type="float" />
 		<CombinedMarket cba="n" type="bool" allowed_values="1|0"/>
 		<duration max="24" min="0.0" type="float" />
+		<u_ts_constraints allowed_values="1|0" cba="n" type="bool" />
+        <d_ts_constraints allowed_values="1|0" cba="n" type="bool" />
 	</LF>
 	<SR type="service" max_num="1">
 		<growth cba="n" max="100.0" min="0.0" type="float" />
 		<duration cba="n" max="24" min="0.0" type="float" />
+        <ts_constraints allowed_values="1|0" cba="n" type="bool" />
 	</SR>
 	<NSR type="service" max_num="1">
 		<growth cba="n" max="100.0" min="0.0" type="float" />
 		<duration cba="n" max="24" min="0.0" type="float" />
+        <ts_constraints allowed_values="1|0" cba="n" type="bool" />
 	</NSR>
 	<DCM type="service" max_num="1">
 		<growth cba="n" max="100.0" min="0.0" type="float" />
@@ -90,10 +97,13 @@
 		<rated_capacity cba="n" min="0.0" type="float" />
 		<ccost_kW cba="y" min="0.0" type="float" />
 		<grid_charge allowed_values="1|0" cba="n" type="bool" />
+		<grid_charge_penalty min="0" type="float" />
 		<loc allowed_values="ac|dc" cba="n" type="string" />
 		<construction_year cba="n" type="Period" />
 		<operation_year cba="n" type="Period" />
 		<macrs_term allowed_values="3|5|7|10|15|20|25|27.5|39" cba="n" type="float" />
+		<max_rated_capacity min="0.0" cba="n" type="float" />
+		<min_rated_capacity min="0.0" cba="n" type="float" />
 		<curtail type="bool" allowed_values="1|0"/>
 		<decommissioning_cost cba="n" min="0.0" type="float" />
 		<salvage_value cba="n" allowed_values="sunk cost|linear salvage value|BOUND" min="0" type="string/int" />
@@ -229,6 +239,12 @@
 		<dis_max_rated cba="n" min="0.0" type="float" />
 		<dis_min_rated cba="n" min="0.0" type="float" />
 		<ene_max_rated cba="n" min="0.0" type="float" />
+		<user_ch_rated_max cba="n" min="0.0" type="float" />
+		<user_ch_rated_min cba="n" min="0.0" type="float" />
+		<user_dis_rated_max cba="n" min="0.0" type="float" />
+		<user_dis_rated_min cba="n" min="0.0" type="float" />
+		<user_ene_rated_max cba="n" min="0.0" type="float" />
+		<user_ene_rated_min cba="n" min="0.0" type="float" />
 		<ulsoc cba="n" max="100.0" min="0.0" type="float" />
 		<llsoc cba="n" max="100.0" min="0.0" type="float" />
 		<rte cba="n" max="100.0" min="0.0" type="float" />

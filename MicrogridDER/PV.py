@@ -15,8 +15,8 @@ __version__ = 'beta'  # beta version
 import cvxpy as cvx
 from storagevet.Technology import PVSystem
 from MicrogridDER.Sizing import Sizing
-import pandas as pd
 from MicrogridDER.DERExtension import DERExtension
+from ErrorHandelling import *
 import numpy as np
 
 
@@ -39,12 +39,19 @@ class PV(PVSystem.PV, Sizing, DERExtension):
         DERExtension.__init__(self, params)
 
         self.curtail = params['curtail']
+        self.max_rated_capacity = params['max_rated_capacity']
+        self.min_rated_capacity = params['min_rated_capacity']
         if not self.curtail:
             # if we are not curatiling, then we do not need any variables
             self.variable_names = {}
         if not self.rated_capacity:
             self.rated_capacity = cvx.Variable(name='PV rating', integer=True)
+            self.inv_max = self.rated_capacity
             self.size_constraints += [cvx.NonPos(-self.rated_capacity)]
+            if self.min_rated_capacity:
+                self.size_constraints += [cvx.NonPos(self.min_rated_capacity - self.rated_capacity)]
+            if self.max_rated_capacity:
+                self.size_constraints += [cvx.NonPos(self.rated_capacity - self.max_rated_capacity)]
 
     def get_discharge(self, mask):
         """ The effective discharge of this DER
@@ -118,6 +125,15 @@ class PV(PVSystem.PV, Sizing, DERExtension):
             'DER': self.name,
             'Power Capacity (kW)': rated_capacity,
             'Capital Cost ($/kW)': self.capital_cost_function}
+
+        # warn about tight sizing margins
+        if isinstance(self.rated_capacity, cvx.Variable):
+            sizing_margin1 = (abs(self.rated_capacity.value - self.max_rated_capacity) - 0.05 * self.max_rated_capacity)
+            sizing_margin2 = (abs(self.rated_capacity.value - self.min_rated_capacity) - 0.05 * self.min_rated_capacity)
+            if (sizing_margin1 < 0).any() or (sizing_margin2 < 0).any():
+                TellUser.warning("Difference between the optimal PV rated capacity and user upper/lower "
+                                 "bound constraints is less than 5% of the value of user upper/lower bound constraints")
+
         return sizing_results
 
     def update_for_evaluation(self, input_dict):
@@ -131,6 +147,19 @@ class PV(PVSystem.PV, Sizing, DERExtension):
         cost_per_kw = input_dict.get('ccost_kW')
         if cost_per_kw is not None:
             self.capital_cost_function = cost_per_kw
+
+    def sizing_error(self):
+        """
+
+        Returns: True if there is an input error
+
+        """
+        if self.min_rated_capacity > self.max_rated_capacity:
+            TellUser.error(f'{self.unique_tech_id()} requires min_rated_capacity < max_rated_capacity.')
+            return True
+
+    def max_power_defined(self):
+        return self.is_power_sizing() and not self.max_rated_capacity
 
     def replacement_cost(self):
         """

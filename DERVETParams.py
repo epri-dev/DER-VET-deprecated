@@ -12,15 +12,12 @@ __email__ = ['hnathwani@epri.com', 'mevans@epri.com']
 __version__ = 'beta'  # beta version
 
 import xml.etree.ElementTree as et
-import logging
 import pandas as pd
 import numpy as np
 from storagevet.Params import Params
 import copy
+from ErrorHandelling import *
 from pathlib import Path
-
-u_logger = logging.getLogger('User')
-e_logger = logging.getLogger('Error')
 
 
 class ParamsDER(Params):
@@ -140,6 +137,7 @@ class ParamsDER(Params):
         Returns (bool): True if there is no errors found. False if there is errors found in the errors log.
 
         """
+        is_dervet_specific_tech_active = not len
         super().bad_active_combo(dervet=True)
 
     @classmethod
@@ -251,15 +249,15 @@ class ParamsDER(Params):
 
         """
         if warning_type == "too many tags":
-            e_logger.error(f"INPUT: There are {kwargs['length']} {kwargs['tag']}'s, but only {kwargs['max']} can be defined")
+            TellUser.error(f"INPUT: There are {kwargs['length']} {kwargs['tag']}'s, but only {kwargs['max']} can be defined")
 
         if warning_type == 'cba not allowed':
-            e_logger.error(f"INPUT: {kwargs['tag']}-{kwargs['key']} is not be used within the " +
+            TellUser.error(f"INPUT: {kwargs['tag']}-{kwargs['key']} is not be used within the " +
                            "CBA module of the program. Value is ignored.")
             cls.cba_input_error_raised = raise_input_error or cls.cba_input_error_raised
         if warning_type == "cba sa length":
             cls.cba_input_error_raised = raise_input_error or cls.cba_input_error_raised
-            e_logger.error(f"INPUT: {kwargs['tag']}-{kwargs['key']} has not enough CBA evaluatino values to "
+            TellUser.error(f"INPUT: {kwargs['tag']}-{kwargs['key']} has not enough CBA evaluatino values to "
                            f"successfully complete sensitivity analysis. Please include {kwargs['required_num']} "
                            f"values, each corresponding to the Sensitivity Analysis value given")
         super().report_warning(warning_type, raise_input_error, **kwargs)
@@ -287,8 +285,6 @@ class ParamsDER(Params):
             cls.referenced_data['customer_tariff'][ct_file] = cls.read_from_file('customer_tariff', ct_file, 'Billing Period')
         for yr_file in yr_files:
             cls.referenced_data['yearly_data'][yr_file] = cls.read_from_file('yearly_data', yr_file, 'Year')
-
-        return True
 
     @classmethod
     def grab_evaluation_lst(cls, tag, key):
@@ -337,7 +333,7 @@ class ParamsDER(Params):
 
         # check for any entries w/ NaN to make sure everything went fine
         if np.any(cls.case_definitions == np.NAN):
-            print('There are some left over Nans in the case definition. Something went wrong.')
+            TellUser.debug('There are some left over Nans in the case definition. Something went wrong.')
 
     @classmethod
     def cba_input_builder(cls):
@@ -389,20 +385,6 @@ class ParamsDER(Params):
             finance["customer_tariff"] = cls.referenced_data["customer_tariff"][finance["customer_tariff_filename"]]
         return cba_dict
 
-    def load_scenario(self):
-        """ Interprets user given data and prepares it for Scenario.
-
-        """
-        Params.load_scenario(self)
-
-        if self.Scenario['binary']:
-            e_logger.warning('Please note that the binary formulation will be used. If attemping to size, ' +
-                             'there is a possiblity that the CVXPY will throw a "DCPError". This will resolve ' +
-                             'by turning the binary formulation flag off.')
-            u_logger.warning('Please note that the binary formulation will be used. If attemping to size, ' +
-                             'there is a possiblity that the CVXPY will throw a "DCPError". This will resolve ' +
-                             'by turning the binary formulation flag off.')
-
     def load_finance(self):
         """ Interprets user given data and prepares it for Finance.
 
@@ -415,99 +397,38 @@ class ParamsDER(Params):
         """ Interprets user given data and prepares it for each technology.
 
         """
-        # TODO - redo the error checking in this method; it has become gross --AE
-
-        def load_ts_limits(ess_inputs, tag, measurement, unit):
-            input_cols = [f'{tag}: {measurement} Max ({unit})/{id_str}', f'{tag}: {measurement} Min ({unit})/{id_str}']
-            ts_max = time_series.get(input_cols[0])
-            ts_min = time_series.get(input_cols[1])
-            if ts_max is None and ts_min is None:
-                self.record_input_error(f"Missing '{tag}: {measurement} Min ({unit})/{id_str}' or '{tag}: {measurement} Max ({unit})/{id_str}' " +
-                                        "from timeseries input. User indicated one needs to be applied. " +
-                                        "Please include or turn incl_ts_energy_limits off.")
-            if unit == 'kW':
-                # preform the following checks on the values in the timeseries
-                if ts_max.max() * ts_max.min() < 0:
-                    # then the max and min are not both positive or both negative -- so error
-                    self.record_input_error(f"'{tag}: {measurement} Max ({unit})/{id_str}' should be all positive or all negative. " +
-                                            "Please fix and rerun.")
-                if ts_min.max() * ts_min.min() < 0:
-                    # then the max and min are not both positive or both negative -- so error
-                    self.record_input_error(f"'{tag}: {measurement} Min ({unit})/{id_str}' should be all positive or all negative. " +
-                                            "Please fix and rerun.")
-            if unit == 'kWh':
-                # preform the following checks on the values in the timeseries
-                if ts_max.max() < 0:
-                    self.record_input_error(f"'{tag}: {measurement} Max ({unit})/{id_str}' should be greater than 0. Please fix and rerun.")
-                if ts_min.max() < 0:
-                    self.record_input_error(f"'{tag}: {measurement} Min ({unit})/{id_str}' should be greater than 0. Please fix and rerun.")
-
-            ess_inputs.update({f'ts_{measurement.lower()}_max': ts_max,
-                               f'ts_{measurement.lower()}_min': ts_min})
 
         time_series = self.Scenario['time_series']
-        sizing_optimization = False
         if len(self.Battery):
             for id_str, battery_inputs in self.Battery.items():
-                if not battery_inputs['ch_max_rated'] or not battery_inputs['dis_max_rated'] or not battery_inputs['ene_max_rated']:
-                    sizing_optimization = True
+                if not battery_inputs['ch_max_rated'] or not battery_inputs['dis_max_rated']:
+                    if not battery_inputs['ch_max_rated']:
+                        if battery_inputs['user_ch_rated_min'] > battery_inputs['user_ch_rated_max']:
+                            self.record_input_error('Error: User battery min charge power requirement is greater than max charge power requirement.')
+                    if not battery_inputs['dis_max_rated']:
+                        if battery_inputs['user_dis_rated_min'] > battery_inputs['user_dis_rated_max']:
+                            self.record_input_error('User battery min discharge power requirement is greater than max discharge power requirement.')
+                if not battery_inputs['ene_max_rated']:
+                    if battery_inputs['user_ene_rated_min'] > battery_inputs['user_ene_rated_max']:
+                        self.record_input_error('Error: User battery min energy requirement is greater than max energy requirement.')
 
                 # check if user wants to include timeseries constraints -> grab data
                 if battery_inputs['incl_ts_energy_limits']:
-                    load_ts_limits(battery_inputs, 'Battery', 'Energy', 'kWh')
+                    self.load_ts_limits(id_str, battery_inputs, 'Battery', 'Energy', 'kWh', time_series)
                 if battery_inputs['incl_ts_charge_limits']:
-                    load_ts_limits(battery_inputs, 'Battery', 'Charge', 'kW')
+                    self.load_ts_limits(id_str, battery_inputs, 'Battery', 'Charge', 'kW', time_series)
                 if battery_inputs['incl_ts_discharge_limits']:
-                    load_ts_limits(battery_inputs, 'Battery', 'Discharge', 'kW')
+                    self.load_ts_limits(id_str, battery_inputs, 'Battery', 'Discharge', 'kW', time_series)
 
         if len(self.CAES):
             for id_str, caes_inputs in self.CAES.items():
                 # check if user wants to include timeseries constraints -> grab data
                 if caes_inputs['incl_ts_energy_limits']:
-                    load_ts_limits(caes_inputs, 'CAES', 'Energy', 'kWh')
+                    self.load_ts_limits(id_str, caes_inputs, 'CAES', 'Energy', 'kWh', time_series)
                 if caes_inputs['incl_ts_charge_limits']:
-                    load_ts_limits(caes_inputs, 'CAES', 'Charge', 'kW')
+                    self.load_ts_limits(id_str, caes_inputs, 'CAES', 'Charge', 'kW', time_series)
                 if caes_inputs['incl_ts_discharge_limits']:
-                    load_ts_limits(caes_inputs, 'CAES', 'Discharge', 'kW')
-
-        if len(self.PV):
-            for pv_inputs in self.PV.values():
-                if not pv_inputs['rated_capacity']:
-                    sizing_optimization = True
-
-        if len(self.ICE):
-            # add scenario case parameters to ICE parameter dictionary
-            for id_str, ice_input in self.ICE.items():
-                if not ice_input['rated_power']:
-                    sizing_optimization = True
-
-        if len(self.CT):
-            # add scenario case parameters to CT parameter dictionary
-            for id_str, ct_input in self.CT.items():
-                if ct_input['n_min'] != ct_input['n_max']:
-                    sizing_optimization = True
-                if ct_input['n_min'] > ct_input['n_max']:
-                    self.record_input_error(f'CT {id_str} must have n_min < n_max')
-
-        if len(self.DieselGenset):
-            # add scenario case parameters to DG parameter dictionary
-            for id_str, dg_input in self.DieselGenset.items():
-                if dg_input['n_min'] != dg_input['n_max']:
-                    sizing_optimization = True
-                if dg_input['n_min'] > dg_input['n_max']:
-                    self.record_input_error(f'DieselGenset {id_str} must have n_min < n_max')
-                dg_input.update({'dt': self.Scenario['dt']})
-
-        if len(self.CHP):
-            # add scenario case parameters to CHP parameter dictionary
-            for id_str, chp_input in self.CHP.items():
-                if chp_input['n_min'] != chp_input['n_max']:
-                    sizing_optimization = True
-                if chp_input['n_min'] > chp_input['n_max']:
-                    self.record_input_error(f'CHP {id_str} must have n_min < n_max')
-
-        if sizing_optimization and not self.Scenario['n'] == 'year':  # todo: move to b4 opt set up. w/ other sizing checks --hn
-            self.record_input_error('Trying to size without setting the optimization window to \'year\'')
+                    self.load_ts_limits(id_str, caes_inputs, 'CAES', 'Discharge', 'kW', time_series)
 
         if len(self.Load):
             if self.Scenario['incl_site_load'] != 1:
@@ -547,8 +468,35 @@ class ParamsDER(Params):
                 except KeyError:
                     self.record_input_error("Missing 'Natural Gas Price ($/MillionBTU)' from monthly data input")
 
-
         super().load_technology()
+
+    def load_ts_limits(self, id_str, inputs_dct, tag, measurement, unit, time_series):
+        input_cols = [f'{tag}: {measurement} Max ({unit})/{id_str}', f'{tag}: {measurement} Min ({unit})/{id_str}']
+        ts_max = time_series.get(input_cols[0])
+        ts_min = time_series.get(input_cols[1])
+        if ts_max is None and ts_min is None:
+            self.record_input_error(f"Missing '{tag}: {measurement} Min ({unit})/{id_str}' or '{tag}: {measurement} Max ({unit})/{id_str}' " +
+                                    "from timeseries input. User indicated one needs to be applied. " +
+                                    "Please include or turn incl_ts_energy_limits off.")
+        if unit == 'kW':
+            # preform the following checks on the values in the timeseries
+            if ts_max.max() * ts_max.min() < 0:
+                # then the max and min are not both positive or both negative -- so error
+                self.record_input_error(f"'{tag}: {measurement} Max ({unit})/{id_str}' should be all positive or all negative. " +
+                                        "Please fix and rerun.")
+            if ts_min.max() * ts_min.min() < 0:
+                # then the max and min are not both positive or both negative -- so error
+                self.record_input_error(f"'{tag}: {measurement} Min ({unit})/{id_str}' should be all positive or all negative. " +
+                                        "Please fix and rerun.")
+        if unit == 'kWh':
+            # preform the following checks on the values in the timeseries
+            if ts_max.max() < 0:
+                self.record_input_error(f"'{tag}: {measurement} Max ({unit})/{id_str}' should be greater than 0. Please fix and rerun.")
+            if ts_min.max() < 0:
+                self.record_input_error(f"'{tag}: {measurement} Min ({unit})/{id_str}' should be greater than 0. Please fix and rerun.")
+
+        inputs_dct.update({f'ts_{measurement.lower()}_max': ts_max,
+                           f'ts_{measurement.lower()}_min': ts_min})
 
     def load_services(self):
         """ Interprets user given data and prepares it for each ValueStream (dispatch and pre-dispatch).
@@ -556,16 +504,38 @@ class ParamsDER(Params):
         """
         super().load_services()
 
-        post_facto_only = False
-
         if self.Reliability is not None:
-            post_facto_only = self.Reliability['post_facto_only']
             self.Reliability["dt"] = self.Scenario["dt"]
             try:
                 self.Reliability.update({'critical load': self.Scenario['time_series'].loc[:, 'Critical Load (kW)']})
             except KeyError:
                 self.record_input_error("Missing 'Critial Load (kW)' from timeseries input. Please include a critical load.")
 
-        if self.DA is None and self.retailTimeShift is None and not post_facto_only:
-            self.record_input_error('Not providing DA or retailETS might cause the solver to take infinite time to solve!')
-        u_logger.info("Successfully prepared the value-stream (services)")
+        # TODO add try statements around each lookup to time_series
+        if self.FR is not None:
+            if self.FR['u_ts_constraints']:
+                self.FR.update({'regu_max': self.Scenario['time_series'].loc[:, 'FR Reg Up Max (kW)'],
+                                'regu_min': self.Scenario['time_series'].loc[:, 'FR Reg Up Min (kW)']})
+            if self.FR['u_ts_constraints']:
+                self.FR.update({'regd_max': self.Scenario['time_series'].loc[:, 'FR Reg Down Max (kW)'],
+                                'regd_min': self.Scenario['time_series'].loc[:, 'FR Reg Down Min (kW)']})
+
+        if self.SR is not None:
+            if self.SR['ts_constraints']:
+                self.SR.update({'max': self.Scenario['time_series'].loc[:, 'SR Max (kW)'],
+                                'min': self.Scenario['time_series'].loc[:, 'SR Min (kW)']})
+
+        if self.NSR is not None:
+            if self.NSR['ts_constraints']:
+                self.NSR.update({'max': self.Scenario['time_series'].loc[:, 'NSR Max (kW)'],
+                                 'min': self.Scenario['time_series'].loc[:, 'NSR Min (kW)']})
+
+        if self.LF is not None:
+            if self.LF['u_ts_constraints']:
+                self.LF.update({'lf_u_max': self.Scenario['time_series'].loc[:, 'LF Reg Up Max (kW)'],
+                                'lf_u_min': self.Scenario['time_series'].loc[:, 'LF Reg Up Min (kW)']})
+            if self.LF['u_ts_constraints']:
+                self.LF.update({'lf_d_max': self.Scenario['time_series'].loc[:, 'LF Reg Down Max (kW)'],
+                                'lf_d_min': self.Scenario['time_series'].loc[:, 'LF Reg Down Min (kW)']})
+
+        TellUser.debug("Successfully prepared the value-streams")

@@ -1,4 +1,4 @@
-__all__ = ['CostBenefitAnalysis', 'ParamsDER', 'MicrogridResult', 'MicrogridResult', 'run_DERVET', "MicrogridScenario", "storagevet", ]
+__all__ = ['CBA', 'DERVETParams', 'MicrogridResult', 'MicrogridResult', 'run_DERVET', "MicrogridScenario", "storagevet", ]
 __copyright__ = 'Copyright 2018. Electric Power Research Institute (EPRI). All Rights Reserved.'
 __credits__ = ['Miles Evans', 'Andres Cortes', 'Evan Giarta', 'Halley Nathwani']
 __license__ = 'EPRI'

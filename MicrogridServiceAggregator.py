@@ -7,6 +7,7 @@ __email__ = ['hnathwani@epri.com', 'egiarta@epri.com', 'mevans@epri.com']
 __version__ = "x.x.x"
 
 from storagevet.ServiceAggregator import ServiceAggregator
+from ErrorHandelling import *
 
 
 class MicrogridServiceAggregator(ServiceAggregator):
@@ -30,3 +31,20 @@ class MicrogridServiceAggregator(ServiceAggregator):
         """
         return {'SR', 'NSR', 'FR', 'LF'} & set(self.value_streams.keys())
 
+    def does_wholesale_markets_have_max_defined(self):
+        """
+
+        Returns:
+
+        """
+        error = False
+        for vs_name in {'LF', 'SR', 'NSR', 'FR'}:
+            vs = self.value_streams.get(vs_name, False)
+            if vs and not vs.u_ts_constraints and not vs.d_ts_constraints:
+                TellUser.error('Trying to size the power of the system to maximize profits ' +
+                               f'in wholesale markets, but {vs_name} time-series constraints is not applied.')
+                error = True
+        return error
+
+    def any_max_participation_constraints_not_included(self):
+        return bool(sum([1 if not vs.max_participation_is_defined() else 0 for vs in self.value_streams]))

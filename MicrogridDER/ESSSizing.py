@@ -16,11 +16,8 @@ from MicrogridDER.Sizing import Sizing
 from storagevet.Technology.EnergyStorage import EnergyStorage
 from MicrogridDER.DERExtension import DERExtension
 import cvxpy as cvx
-import logging
+from ErrorHandelling import *
 import numpy as np
-
-u_logger = logging.getLogger('User')
-e_logger = logging.getLogger('Error')
 
 
 class ESSSizing(EnergyStorage, DERExtension, Sizing):
@@ -34,7 +31,31 @@ class ESSSizing(EnergyStorage, DERExtension, Sizing):
         Args:
             params (dict): Dict of parameters
         """
+        TellUser.debug(f"Initializing {__name__}")
         super().__init__(params)
+
+        self.incl_energy_limits = params.get('incl_ts_energy_limits', False)  # this is an input included in the dervet schema only --HN
+        if self.incl_energy_limits:
+            self.limit_energy_max = params['ts_energy_max'].fillna(self.ene_max_rated)
+            self.limit_energy_min = params['ts_energy_min'].fillna(0)
+        self.incl_charge_limits = params.get('incl_ts_charge_limits', False)  # this is an input included in the dervet schema only --HN
+        if self.incl_charge_limits:
+            self.limit_charge_max = params['ts_charge_max'].fillna(self.ch_max_rated)
+            self.limit_charge_min = params['ts_charge_min'].fillna(self.ch_min_rated)
+        self.incl_discharge_limits = params.get('incl_ts_discharge_limits', False)  # this is an input included in the dervet schema only --HN
+        if self.incl_discharge_limits:
+            self.limit_discharge_max = params['ts_discharge_max'].fillna(self.dis_max_rated)
+            self.limit_discharge_min = params['ts_discharge_min'].fillna(self.dis_min_rated)
+        if self.tag == 'CAES':
+            # note that CAES sizing is not allowed bc it has not been validated -HN
+            # TODO CAES + a warning if the user tries to size it
+            return
+        self.user_ch_rated_max = params['user_ch_rated_max']
+        self.user_ch_rated_min = params['user_ch_rated_min']
+        self.user_dis_rated_max = params['user_dis_rated_max']
+        self.user_dis_rated_min = params['user_dis_rated_min']
+        self.user_ene_rated_max = params['user_ene_rated_max']
+        self.user_ene_rated_min = params['user_ene_rated_min']
         # if the user inputted the energy rating as 0, then size for energy rating
         if not self.ene_max_rated:
             self.ene_max_rated = cvx.Variable(name='Energy_cap', integer=True)
@@ -43,33 +64,55 @@ class ESSSizing(EnergyStorage, DERExtension, Sizing):
             self.effective_soe_min = self.llsoc * self.ene_max_rated
             self.effective_soe_max = self.ulsoc * self.ene_max_rated
             if self.incl_energy_limits and self.limit_energy_max is not None:
-                e_logger.error(f'Ignoring energy max time series because {self.tag}-{self.name} sizing for energy capacity')
+                TellUser.error(f'Ignoring energy max time series because {self.tag}-{self.name} sizing for energy capacity')
                 self.limit_energy_max = None
+            if self.user_ene_rated_min:
+                self.size_constraints += [cvx.NonPos(self.user_ene_rated_min - self.ene_max_rated)]
+            if self.user_ene_rated_max:
+                self.size_constraints += [cvx.NonPos(self.ene_max_rated - self.user_ene_rated_max)]
 
         # if both the discharge and charge ratings are 0, then size for both and set them equal to each other
         if not self.ch_max_rated and not self.dis_max_rated:
             self.ch_max_rated = cvx.Variable(name='power_cap', integer=True)
             self.size_constraints += [cvx.NonPos(-self.ch_max_rated)]
+            if self.user_ch_rated_max:
+                self.size_constraints += [cvx.NonPos(self.ch_max_rated - self.user_ch_rated_max)]
+            if self.user_ch_rated_min:
+                self.size_constraints += [cvx.NonPos(self.user_ch_rated_min - self.ch_min_rated)]
+
             self.dis_max_rated = self.ch_max_rated
+
+            if self.user_dis_rated_min:
+                self.size_constraints += [cvx.NonPos(self.user_dis_rated_min - self.dis_min_rated)]
+            if self.user_dis_rated_max:
+                self.size_constraints += [cvx.NonPos(self.dis_max_rated - self.user_dis_rated_max)]
             if self.incl_charge_limits and self.limit_charge_max is not None:
-                e_logger.error(f'Ignoring charge max time series because {self.tag}-{self.name} sizing for power capacity')
+                TellUser.error(f'Ignoring charge max time series because {self.tag}-{self.name} sizing for power capacity')
                 self.limit_charge_max = None
             if self.incl_discharge_limits and self.limit_discharge_max is not None:
-                e_logger.error(f'Ignoring discharge max time series because {self.tag}-{self.name} sizing for power capacity')
+                TellUser.error(f'Ignoring discharge max time series because {self.tag}-{self.name} sizing for power capacity')
                 self.limit_discharge_max = None
 
         elif not self.ch_max_rated:  # if the user inputted the discharge rating as 0, then size discharge rating
             self.ch_max_rated = cvx.Variable(name='charge_power_cap', integer=True)
             self.size_constraints += [cvx.NonPos(-self.ch_max_rated)]
+            if self.user_ch_rated_max:
+                self.size_constraints += [cvx.NonPos(self.ch_max_rated - self.user_ch_rated_max)]
+            if self.user_ch_rated_min:
+                self.size_constraints += [cvx.NonPos(self.user_ch_rated_min - self.ch_min_rated)]
             if self.incl_charge_limits and self.limit_charge_max is not None:
-                e_logger.error(f'Ignoring charge max time series because {self.tag}-{self.name} sizing for power capacity')
+                TellUser.error(f'Ignoring charge max time series because {self.tag}-{self.name} sizing for power capacity')
                 self.limit_charge_max = None
 
         elif not self.dis_max_rated:  # if the user inputted the charge rating as 0, then size for charge
             self.dis_max_rated = cvx.Variable(name='discharge_power_cap', integer=True)
             self.size_constraints += [cvx.NonPos(-self.dis_max_rated)]
+            if self.user_dis_rated_min:
+                self.size_constraints += [cvx.NonPos(self.user_dis_rated_min - self.dis_min_rated)]
+            if self.user_dis_rated_max:
+                self.size_constraints += [cvx.NonPos(self.dis_max_rated - self.user_dis_rated_max)]
             if self.incl_discharge_limits and self.limit_discharge_max is not None:
-                e_logger.error(f'Ignoring discharge max time series because {self.tag}-{self.name} sizing for power capacity')
+                TellUser.error(f'Ignoring discharge max time series because {self.tag}-{self.name} sizing for power capacity')
                 self.limit_discharge_max = None
 
     def discharge_capacity(self, solution=False):
@@ -158,9 +201,34 @@ class ESSSizing(EnergyStorage, DERExtension, Sizing):
         """
 
         constraint_list = super().constraints(mask)
-
         constraint_list += self.size_constraints
-
+        if self.incl_energy_limits:
+            # add timeseries energy limits on this instance
+            ene = self.variables_dict['ene']
+            if self.limit_energy_max is not None:
+                energy_max = cvx.Parameter(value=self.limit_energy_max.loc[mask].values, shape=sum(mask), name='ts_energy_max')
+                constraint_list += [cvx.NonPos(ene - energy_max)]
+            if self.limit_energy_min is not None:
+                energy_min = cvx.Parameter(value=self.limit_energy_min.loc[mask].values, shape=sum(mask), name='ts_energy_min')
+                constraint_list += [cvx.NonPos(energy_min - ene)]
+        if self.incl_charge_limits:
+            # add timeseries energy limits on this instance
+            charge = self.variables_dict['ch']
+            if self.limit_charge_max is not None:
+                charge_max = cvx.Parameter(value=self.limit_charge_max.loc[mask].values, shape=sum(mask), name='ts_charge_max')
+                constraint_list += [cvx.NonPos(charge - charge_max)]
+            if self.limit_charge_min is not None:
+                charge_min = cvx.Parameter(value=self.limit_charge_min.loc[mask].values, shape=sum(mask), name='ts_charge_min')
+                constraint_list += [cvx.NonPos(charge_min - charge)]
+        if self.incl_discharge_limits:
+            # add timeseries energy limits on this instance
+            discharge = self.variables_dict['dis']
+            if self.limit_discharge_max is not None:
+                discharge_max = cvx.Parameter(value=self.limit_discharge_max.loc[mask].values, shape=sum(mask), name='ts_discharge_max')
+                constraint_list += [cvx.NonPos(discharge - discharge_max)]
+            if self.limit_discharge_min is not None:
+                discharge_min = cvx.Parameter(value=self.limit_discharge_min.loc[mask].values, shape=sum(mask), name='ts_discharge_min')
+                constraint_list += [cvx.NonPos(discharge_min - discharge)]
         return constraint_list
 
     def objective_function(self, mask, annuity_scalar=1):
@@ -198,7 +266,32 @@ class ESSSizing(EnergyStorage, DERExtension, Sizing):
             'Capital Cost ($/kW)': self.capital_cost_function[1],
             'Capital Cost ($/kWh)': self.capital_cost_function[2]}
         if sizing_results['Duration (hours)'] > 24:
-            u_logger.error(f'The duration of {self.name} is greater than 24 hours!')
+            TellUser.warning(f'The duration of {self.name} is greater than 24 hours!')
+        if self.tag == 'CAES':
+            return
+
+        # warn about tight sizing margins
+        if self.is_energy_sizing():
+            energy_cap = self.energy_capacity(True)
+            sizing_margin1 = (abs(energy_cap - self.user_ene_rated_max) - 0.05 * self.user_ene_rated_max)
+            sizing_margin2 = (abs(energy_cap - self.user_ene_rated_min) - 0.05 * self.user_ene_rated_min)
+            if (sizing_margin1 < 0).any() or (sizing_margin2 < 0).any():
+                TellUser.warning("Difference between the optimal Battery ene max rated and user upper/lower "
+                                 "bound constraints is less than 5% of the value of user upper/lower bound constraints")
+        if self.is_charge_sizing():
+            charge_cap = self.charge_capacity(True)
+            sizing_margin1 = (abs(charge_cap - self.user_ch_rated_max) - 0.05 * self.user_ch_rated_max)
+            sizing_margin2 = (abs(charge_cap - self.user_ch_rated_min) - 0.05 * self.user_ch_rated_min)
+            if (sizing_margin1 < 0).any() or (sizing_margin2 < 0).any():
+                TellUser.warning("Difference between the optimal Battery ch max rated and user upper/lower "
+                                 "bound constraints is less than 5% of the value of user upper/lower bound constraints")
+        if self.is_discharge_sizing():
+            discharge_cap = self.discharge_capacity(True)
+            sizing_margin1 = (abs(discharge_cap - self.user_dis_rated_max) - 0.05 * self.user_dis_rated_max)
+            sizing_margin2 = (abs(discharge_cap - self.user_dis_rated_min) - 0.05 * self.user_dis_rated_min)
+            if (sizing_margin1 < 0).any() or (sizing_margin2 < 0).any():
+                TellUser.warning("Difference between the optimal Battery dis max rated and user upper/lower "
+                                 "bound constraints is less than 5% of the value of user upper/lower bound constraints")
         return sizing_results
 
     def calculate_duration(self):
@@ -238,6 +331,46 @@ class ESSSizing(EnergyStorage, DERExtension, Sizing):
             if p_start_dis is not None:
                 self.p_start_dis = p_start_dis
 
+    def sizing_error(self):
+        """
+
+        Returns: True if there is an input error
+
+        """
+        if self.tag == 'CAES':
+            return True
+        if self.is_power_sizing() and self.incl_binary:
+            TellUser.error(f'{self.unique_tech_id()} is being sized and binary is turned on. You will get a DCP error.')
+            return True
+        if self.user_ch_rated_min > self.user_ch_rated_max:
+            TellUser.error(f'{self.unique_tech_id()} min charge power requirement is greater than max charge power requirement.')
+            return True
+        if self.user_dis_rated_min > self.user_dis_rated_max:
+            TellUser.error(f'{self.unique_tech_id()} min discharge power requirement is greater than max discharge power requirement.')
+            return True
+        if self.user_ene_rated_min > self.user_ene_rated_max:
+            TellUser.error(f'{self.unique_tech_id()} min energy requirement is greater than max energy requirement.')
+            return True
+
+    def max_p_schedule_down(self):
+        # ability to provide regulation down through charging more
+        if self.is_charge_sizing():
+            if not self.user_ch_rated_max:
+                max_charging_range = self.user_ch_rated_max - self.ch_min_rated
+            else:
+                max_charging_range = np.infty
+        else:
+            max_charging_range = self.ch_max_rated - self.ch_min_rated
+        # ability to provide regulation down through discharging less
+        if self.is_discharge_sizing():
+            if not self.user_ch_rated_max:
+                max_discharging_range = self.user_dis_rated_max - self.dis_min_rated
+            else:
+                max_discharging_range = np.infty
+        else:
+            max_discharging_range = self.dis_max_rated - self.dis_min_rated
+        return max_charging_range + max_discharging_range
+
     def replacement_cost(self):
         """
 
@@ -245,3 +378,18 @@ class ESSSizing(EnergyStorage, DERExtension, Sizing):
 
         """
         return np.dot(self.replacement_cost_function, [1, self.discharge_capacity(True), self.energy_capacity(True)])
+
+    def is_charge_sizing(self):
+        return isinstance(self.dis_max_rated, cvx.Variable)
+
+    def is_discharge_sizing(self):
+        return isinstance(self.dis_max_rated, cvx.Variable)
+
+    def is_power_sizing(self):
+        return self.is_charge_sizing() or self.is_discharge_sizing()
+
+    def is_energy_sizing(self):
+        return isinstance(self.ene_max_rated, cvx.Variable)
+
+    def max_power_defined(self):
+        return (self.is_charge_sizing() and not self.user_ch_rated_max) and (self.is_discharge_sizing() and not self.user_dis_rated_max)
