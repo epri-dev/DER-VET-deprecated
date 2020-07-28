@@ -33,7 +33,9 @@ class ControllableLoad(Load, DERExtension, ContinuousSizing):
         """
         TellUser.debug(f"Initializing {__name__}")
         # create generic technology object
-        super(ControllableLoad, self).__init__(params)
+        Load.__init__(self, params)
+        DERExtension.__init__(self, params)
+        ContinuousSizing.__init__(self, params)
 
         # input params  UNITS ARE COMMENTED TO THE RIGHT
         self.rated_power = params['power_rating']  # kW

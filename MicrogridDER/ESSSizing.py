@@ -32,8 +32,9 @@ class ESSSizing(EnergyStorage, DERExtension, ContinuousSizing):
             params (dict): Dict of parameters
         """
         TellUser.debug(f"Initializing {__name__}")
-        super().__init__(params)
-
+        EnergyStorage.__init__(self, params)
+        DERExtension.__init__(self, params)
+        ContinuousSizing.__init__(self, params)
         self.incl_energy_limits = params.get('incl_ts_energy_limits', False)  # this is an input included in the dervet schema only --HN
         if self.incl_energy_limits:
             self.limit_energy_max = params['ts_energy_max'].fillna(self.ene_max_rated)
@@ -243,8 +244,7 @@ class ESSSizing(EnergyStorage, DERExtension, ContinuousSizing):
             self.costs (Dict): Dict of objective costs
         """
         costs = super().objective_function(mask, annuity_scalar)
-        if self.being_sized():
-            costs.update({self.name + 'capex': self.get_capex()})
+        costs.update(self.sizing_objective())
         return costs
 
     def sizing_summary(self):

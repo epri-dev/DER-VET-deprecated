@@ -32,7 +32,9 @@ class RotatingGeneratorSizing(RotatingGenerator, DERExtension, ContinuousSizing)
             params (dict): Dict of parameters for initialization
         """
         TellUser.debug(f"Initializing {__name__}")
-        super(RotatingGeneratorSizing, self).__init__(params)
+        RotatingGenerator.__init__(self, params)
+        DERExtension.__init__(self, params)
+        ContinuousSizing.__init__(self, params)
         self.max_rated_power = params['max_rated_capacity']
         self.min_rated_power = params['max_rated_capacity']
         if not self.rated_power:
@@ -52,7 +54,11 @@ class RotatingGeneratorSizing(RotatingGenerator, DERExtension, ContinuousSizing)
         if not solution or not self.being_sized():
             return super().discharge_capacity()
         else:
-            return self.rated_power.value * self.n
+            try:
+                rated_power = self.rated_power.value
+            except AttributeError:
+                rated_power = self.rated_power
+            return rated_power * self.n
 
     def name_plate_capacity(self, solution=False):
         """ Returns the value of 1 generator in a set of generators
@@ -63,10 +69,14 @@ class RotatingGeneratorSizing(RotatingGenerator, DERExtension, ContinuousSizing)
         Returns:
 
         """
-        if not solution and not self.being_sized():
+        if not solution:
             return self.rated_power
         else:
-            return self.rated_power.value
+            try:
+                rated_power = self.rated_power.value
+            except AttributeError:
+                rated_power = self.rated_power
+            return rated_power
 
     def constraints(self, mask):
         """ Builds the master constraint list for the subset of timeseries data being optimized.
@@ -106,7 +116,7 @@ class RotatingGeneratorSizing(RotatingGenerator, DERExtension, ContinuousSizing)
             self.costs (Dict): Dict of objective costs
         """
         costs = super().objective_function(mask, annuity_scalar)
-
+        costs.update(self.sizing_objective())
         return costs
 
     def sizing_summary(self):

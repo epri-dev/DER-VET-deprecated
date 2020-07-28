@@ -14,6 +14,7 @@ __version__ = 'beta'
 
 import numpy as np
 import pandas as pd
+from ErrorHandelling import *
 
 
 class DERExtension:
@@ -26,6 +27,7 @@ class DERExtension:
         """
 
         """
+        TellUser.debug(f"Initializing {__name__}")
         # try to look for DERVET specific user inputs that are shared by all DERs
         self.nsr_response_time = params['nsr_response_time']
         self.sr_response_time = params['sr_response_time']

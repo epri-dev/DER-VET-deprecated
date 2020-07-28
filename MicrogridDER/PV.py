@@ -35,7 +35,9 @@ class PV(PVSystem.PV, DERExtension, ContinuousSizing):
         """
         TellUser.debug(f"Initializing {__name__}")
         # create generic technology object
-        super(PV, self).__init__(params)
+        PVSystem.PV.__init__(self, params)
+        DERExtension.__init__(self, params)
+        ContinuousSizing.__init__(self, params)
         self.curtail = params['curtail']
         self.max_rated_capacity = params['max_rated_capacity']
         self.min_rated_capacity = params['min_rated_capacity']
@@ -83,7 +85,7 @@ class PV(PVSystem.PV, DERExtension, ContinuousSizing):
             self.costs (Dict): Dict of objective costs
         """
         costs = super(PV, self).objective_function(mask, annuity_scalar)
-
+        costs.update(self.sizing_objective())
         return costs
 
     def timeseries_report(self):
