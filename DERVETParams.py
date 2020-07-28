@@ -403,6 +403,8 @@ class ParamsDER(Params):
                 if not battery_inputs['ene_max_rated']:
                     if battery_inputs['user_ene_rated_min'] > battery_inputs['user_ene_rated_max']:
                         self.record_input_error('Error: User battery min energy requirement is greater than max energy requirement.')
+                if battery_inputs['high_soc_penalty'] and battery_inputs['low_soc_penalty']:
+                    self.record_input_error('Cannot apply a low SOC penalty and high SOC penalty to a battery at the same time')
 
                 # check if user wants to include timeseries constraints -> grab data
                 if battery_inputs['incl_ts_energy_limits']:
@@ -421,6 +423,8 @@ class ParamsDER(Params):
                     self.load_ts_limits(id_str, caes_inputs, 'CAES', 'Charge', 'kW', time_series)
                 if caes_inputs['incl_ts_discharge_limits']:
                     self.load_ts_limits(id_str, caes_inputs, 'CAES', 'Discharge', 'kW', time_series)
+                if caes_inputs['high_soc_penalty'] and caes_inputs['low_soc_penalty']:
+                    self.record_input_error('Cannot apply a low SOC penalty and high SOC penalty to a CAES system at the same time')
 
         if len(self.Load):
             if self.Scenario['incl_site_load'] != 1:
