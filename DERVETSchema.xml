@@ -190,6 +190,7 @@
 		<incl_ts_energy_limits allowed_values="1|0" cba="n" type="bool" />
 		<incl_ts_charge_limits allowed_values="1|0" cba="n" type="bool" />
 		<incl_ts_discharge_limits allowed_values="1|0" cba="n" type="bool" />
+		<high_soc_penalty cba="n" min="0.0" type="float" />
 	</Battery>
 	<CAES type="storage">
 		<startup_time cba="n" min="0" type="int" />
