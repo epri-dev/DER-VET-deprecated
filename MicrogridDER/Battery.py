@@ -32,8 +32,8 @@ class Battery(BatteryTech.Battery, ESSSizing):
         Args:
             params (dict): params dictionary from dataframe for one case
         """
+        TellUser.debug(f"Initializing {__name__}")
         super().__init__(params)  # BatteryTech.Battery->ESSizing->EnergyStorage->DER->Sizing
-
         self.user_duration = params['duration_max']
 
         if self.user_duration:

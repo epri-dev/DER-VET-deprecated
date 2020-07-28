@@ -1,1 +1,1 @@
-__all__ = ['Sizing', 'PV', 'Battery', 'ICE', 'CHP', 'DERExtension']
+__all__ = ['ContinuousSizing', 'PV', 'Battery', 'ICE', 'CHP', 'DERExtension']

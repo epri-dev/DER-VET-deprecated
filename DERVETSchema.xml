@@ -95,6 +95,8 @@
 		<inv_max cba="n" min="0.0" type="float" />
 		<growth cba="n" max="100.0" min="0.0" type="float" />
 		<rated_capacity cba="n" min="0.0" type="float" />
+		<max_rated_capacity min="0.0" cba="n" type="float" />
+		<min_rated_capacity min="0.0" cba="n" type="float" />
 		<ccost_kW cba="y" min="0.0" type="float" />
 		<grid_charge allowed_values="1|0" cba="n" type="bool" />
 		<grid_charge_penalty min="0" type="float" />
@@ -102,8 +104,6 @@
 		<construction_year cba="n" type="Period" />
 		<operation_year cba="n" type="Period" />
 		<macrs_term allowed_values="3|5|7|10|15|20|25|27.5|39" cba="n" type="float" />
-		<max_rated_capacity min="0.0" cba="n" type="float" />
-		<min_rated_capacity min="0.0" cba="n" type="float" />
 		<curtail type="bool" allowed_values="1|0"/>
 		<decommissioning_cost cba="n" min="0.0" type="float" />
 		<salvage_value cba="n" allowed_values="sunk cost|linear salvage value|BOUND" min="0" type="string/int" />
@@ -115,20 +115,21 @@
 	</PV>
 	<ICE type="generator">
 		<name cba="n" type="string" />
-		<nsr_response_time cba="n" min="0" type="int" />
-		<sr_response_time cba="n" min="0" type="int" />
-		<macrs_term allowed_values="3|5|7|10|15|20|25|27.5|39" cba="n" type="float" />
-		<min_rated_power cba="n" min="0.0" type="float" />
-		<max_rated_power cba="n" min="0.0" type="float" />
-		<startup_time cba="n" min="0" type="int" />
-		<efficiency cba="n" min="0.0" type="float" />
-		<fuel_cost cba="y" min="0.0" type="float" />
 		<variable_om_cost cba="y" min="0.0" type="float" />
 		<fixed_om_cost cba="y" min="0.0" type="float" />
-		<rated_power cba="n" min="0.0" type="float" />
+		<rated_capacity cba="n" min="0.0" type="float" />
 		<n min="0" type="int" />
 		<ccost cba="y" min="0.0" type="float" />
 		<ccost_kW cba="y" min="0.0" type="float" />
+		<min_power cba="n" min="0.0" type="float" />
+		<efficiency cba="n" min="0.0" type="float" />
+		<fuel_cost cba="y" min="0.0" type="float" />
+		<max_rated_capacity min="0.0" cba="n" type="float" />
+		<min_rated_capacity min="0.0" cba="n" type="float" />
+		<macrs_term allowed_values="3|5|7|10|15|20|25|27.5|39" cba="n" type="float" />
+		<startup_time cba="n" min="0" type="int" />
+		<nsr_response_time cba="n" min="0" type="int" />
+		<sr_response_time cba="n" min="0" type="int" />
 		<construction_year cba="n" type="Period" />
 		<operation_year cba="n" type="Period" />
 		<decommissioning_cost cba="n" min="0.0" type="float" />
@@ -141,21 +142,22 @@
 		<ter cba="n" max="100.0" min="0.0" type="float" />
 	</ICE>
     <DieselGenset type="generator">
-        <name cba="n" type="string" />
-        <nsr_response_time cba="n" min="0" type="int" />
-        <sr_response_time cba="n" min="0" type="int" />
-        <macrs_term allowed_values="3|5|7|10|15|20|25|27.5|39" cba="n" type="float" />
-        <min_power cba="n" min="0.0" type="float" />
-        <startup_time cba="n" min="0" type="int" />
+		<name cba="n" type="string" />
+		<variable_om_cost cba="y" min="0.0" type="float" />
+		<fixed_om_cost cba="y" min="0.0" type="float" />
+		<rated_capacity cba="n" min="0.0" type="float" />
+		<n min="0" type="int" />
+		<ccost cba="y" min="0.0" type="float" />
+		<ccost_kW cba="y" min="0.0" type="float" />
+		<min_power cba="n" min="0.0" type="float" />
         <efficiency cba="n" min="0.0" type="float" />
         <fuel_cost cba="y" min="0.0" type="float" />
-        <variable_om_cost cba="y" min="0.0" type="float" />
-        <fixed_om_cost cba="y" min="0.0" type="float" />
-        <rated_power cba="n" min="0.0" type="float" />
-        <ccost cba="y" min="0.0" type="float" />
-        <ccost_kW cba="y" min="0.0" type="float" />
-        <n_min cba="n" min="0" type="int" />
-        <n_max cba="n" min="0" type="int" />
+		<max_rated_capacity min="0.0" cba="n" type="float" />
+		<min_rated_capacity min="0.0" cba="n" type="float" />
+		<startup_time cba="n" min="0" type="int" />
+		<nsr_response_time cba="n" min="0" type="int" />
+		<sr_response_time cba="n" min="0" type="int" />
+		<macrs_term allowed_values="3|5|7|10|15|20|25|27.5|39" cba="n" type="float" />
 		<construction_year cba="n" type="Period" />
 		<operation_year cba="n" type="Period" />
 		<decommissioning_cost cba="n" min="0.0" type="float" />
@@ -168,20 +170,21 @@
 		<ter cba="n" max="100.0" min="0.0" type="float" />
     </DieselGenset>
     <CT type="generator">
-        <name cba="n" type="string" />
-        <nsr_response_time cba="n" min="0" type="int" />
-        <sr_response_time cba="n" min="0" type="int" />
-        <macrs_term allowed_values="3|5|7|10|15|20|25|27.5|39" cba="n" type="float" />
-        <min_power cba="n" min="0.0" type="float" />
-        <startup_time cba="n" min="0" type="int" />
+		<name cba="n" type="string" />
+		<variable_om_cost cba="y" min="0.0" type="float" />
+		<fixed_om_cost cba="y" min="0.0" type="float" />
+		<rated_capacity cba="n" min="0.0" type="float" />
+		<n min="0" type="int" />
+		<ccost cba="y" min="0.0" type="float" />
+		<ccost_kW cba="y" min="0.0" type="float" />
+		<min_power cba="n" min="0.0" type="float" />
         <heat_rate cba="y" min="0.0" type="float" />
-        <variable_om_cost cba="y" min="0.0" type="float" />
-        <fixed_om_cost cba="y" min="0.0" type="float" />
-        <rated_power cba="n" min="0.0" type="float" />
-        <ccost cba="y" min="0.0" type="float" />
-        <ccost_kW cba="y" min="0.0" type="float" />
-        <n_min cba="n" min="0" type="int" />
-        <n_max cba="n" min="0" type="int" />
+		<max_rated_capacity min="0.0" cba="n" type="float" />
+		<min_rated_capacity min="0.0" cba="n" type="float" />
+		<startup_time cba="n" min="0" type="int" />
+		<nsr_response_time cba="n" min="0" type="int" />
+		<sr_response_time cba="n" min="0" type="int" />
+		<macrs_term allowed_values="3|5|7|10|15|20|25|27.5|39" cba="n" type="float" />
 		<construction_year cba="n" type="Period" />
 		<operation_year cba="n" type="Period" />
 		<decommissioning_cost cba="n" min="0.0" type="float" />
@@ -194,24 +197,23 @@
 		<ter cba="n" max="100.0" min="0.0" type="float" />
     </CT>
     <CHP type="generator">
-        <name cba="n" type="string" />
-        <nsr_response_time cba="n" min="0" type="int" />
-        <sr_response_time cba="n" min="0" type="int" />
-        <macrs_term allowed_values="3|5|7|10|15|20|25|27.5|39" cba="n" type="float" />
-        <min_power cba="n" min="0.0" type="float" />
-        <startup_time cba="n" min="0" type="int" />
-        <heat_rate cba="y" min="0.0" type="float" />
-        <variable_om_cost cba="y" min="0.0" type="float" />
-        <fixed_om_cost cba="y" min="0.0" type="float" />
-        <rated_power cba="n" min="0.0" type="float" />
-        <ccost cba="y" min="0.0" type="float" />
-        <ccost_kW cba="y" min="0.0" type="float" />
-        <n_min cba="n" min="0" type="int" />
-        <n_max cba="n" min="0" type="int" />
-        <electric_heat_ratio cba="n" min="0.0" type="float" />
-        <electric_ramp_rate cba="n" min="0.0" type="float" />
-        <startup cba="n" type="bool" allowed_values="1|0"/>
-        <p_startup cba="n" min="0.0" type="float" />
+		<name cba="n" type="string" />
+		<variable_om_cost cba="y" min="0.0" type="float" />
+		<fixed_om_cost cba="y" min="0.0" type="float" />
+		<rated_capacity cba="n" min="0.0" type="float" />
+		<n min="0" type="int" />
+		<ccost cba="y" min="0.0" type="float" />
+		<ccost_kW cba="y" min="0.0" type="float" />
+		<min_power cba="n" min="0.0" type="float" />
+		<heat_rate cba="y" min="0.0" type="float" />
+		<electric_heat_ratio cba="n" min="0.0" type="float" />
+		<electric_ramp_rate cba="n" min="0.0" type="float" />
+		<max_rated_capacity min="0.0" cba="n" type="float" />
+		<min_rated_capacity min="0.0" cba="n" type="float" />
+		<startup_time cba="n" min="0" type="int" />
+		<nsr_response_time cba="n" min="0" type="int" />
+		<sr_response_time cba="n" min="0" type="int" />
+		<macrs_term allowed_values="3|5|7|10|15|20|25|27.5|39" cba="n" type="float" />
 		<construction_year cba="n" type="Period" />
 		<operation_year cba="n" type="Period" />
 		<decommissioning_cost cba="n" min="0.0" type="float" />

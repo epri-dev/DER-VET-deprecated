@@ -89,7 +89,7 @@ class CostBenefitAnalysis(Financial):
             for der_instance in der_list:
                 shortest_lifetime = min(der_instance.expected_lifetime, shortest_lifetime)
                 if der_instance.being_sized():
-                    e_logger.error("Analysis horizon mode == 'Auto-calculate based on shortest equipment lifetime', DER-VET will not size any DERs " +
+                    TellUser.error("Analysis horizon mode == 'Auto-calculate based on shortest equipment lifetime', DER-VET will not size any DERs " +
                                    f"when this horizon mode is selected. {der_instance.name} is being sized. Please resolve and rerun.")
                     return pd.Period(year=0, freq='y')  # cannot preform size optimization with mode==2
             return project_start_year + shortest_lifetime-1
@@ -99,7 +99,7 @@ class CostBenefitAnalysis(Financial):
             for der_instance in der_list:
                 longest_lifetime = max(der_instance.expected_lifetime, longest_lifetime)
                 if der_instance.being_sized():
-                    e_logger.error("Analysis horizon mode == 'Auto-calculate based on longest equipment lifetime', DER-VET will not size any DERs " +
+                    TellUser.error("Analysis horizon mode == 'Auto-calculate based on longest equipment lifetime', DER-VET will not size any DERs " +
                                    f"when this horizon mode is selected. {der_instance.name} is being sized. Please resolve and rerun.")
                     return pd.Period(year=0, freq='y')  # cannot preform size optimization with mode==3
             return project_start_year + longest_lifetime-1
@@ -107,14 +107,14 @@ class CostBenefitAnalysis(Financial):
         if self.horizon_mode == 4:
             self.report_annualized_values = True
             if len(der_list) > 1:
-                e_logger.error("Analysis horizon mode == 'Carrying cost', DER-VET cannot convert all value streams into annualized values " +
+                TellUser.error("Analysis horizon mode == 'Carrying cost', DER-VET cannot convert all value streams into annualized values " +
                                f"when more than one DER has been selected. There are {len(der_list)} active. Please resolve and rerun.")
                 return pd.Period(year=0, freq='y')
             else:
                 # require that e < d
                 only_tech = der_list[0]
                 if only_tech.escalation_rate >= self.npv_discount_rate:
-                    e_logger.error(f"The technology escalation rate ({only_tech.escalation_rate}) cannot be greater " +
+                    TellUser.error(f"The technology escalation rate ({only_tech.escalation_rate}) cannot be greater " +
                                    f"than the project discount rate ({self.npv_discount_rate}). Please edit the 'ter' value for {only_tech.name}.")
                     return pd.Period(year=0, freq='y')
                 return project_start_year + only_tech.expected_lifetime-1
@@ -214,15 +214,8 @@ class CostBenefitAnalysis(Financial):
         that is active and has different values specified to evaluate the CBA with.
 
         """
-        try:
-            monthly_data = self.Scenario['monthly_data']
-        except KeyError:
-            monthly_data = None
-
-        try:
-            time_series = self.Scenario['time_series']
-        except KeyError:
-            time_series = None
+        monthly_data = self.Scenario.get('monthly_data')
+        time_series = self.Scenario.get('time_series')
 
         if time_series is not None or monthly_data is not None:
             for value_stream in self.value_streams.values():
@@ -235,8 +228,11 @@ class CostBenefitAnalysis(Financial):
             self.update_with_evaluation(self.value_streams['User'], self.valuestream_values['User'], self.verbose)
 
         for der_tag, instance_dict in self.ders_values.items():
-            for id_str, der_instance in instance_dict.items():
-                self.ders[der_tag][id_str].update_for_evaluation(der_instance)
+            for id_str, der_instance_values in instance_dict.items():
+                der_inst = self.ders[der_tag][id_str]
+                der_inst.update_for_evaluation(der_instance_values)
+                if time_series is not None or monthly_data is not None:
+                    der_inst.update_price_signals(id_str, monthly_data, time_series)
 
     @staticmethod
     def update_with_evaluation(param_object, evaluation_dict, verbose):

@@ -26,9 +26,9 @@ class DiscreteSizing:
         self.n_min = params['n_min']  # generators
         self.n_max = params['n_max']  # generators
         if self.being_sized():
-            params['n'] = cvx.Variable(integer=True, name='generators')
+            self.n = cvx.Variable(integer=True, name='generators')
         else:
-            params['n'] = self.n_max
+            self.n = self.n_max
 
     def being_sized(self):
         """ checks itself to see if this instance is being sized
@@ -49,13 +49,9 @@ class DiscreteSizing:
         Returns:
             A list of constraints that corresponds the battery's physical constraints and its service constraints
         """
-        elec = self.variables_dict['elec']
-        on = self.variables_dict['on']
         constraint_list = []
 
         if self.being_sized():
-            constraint_list += [cvx.NonPos(elec - cvx.multiply(self.rated_power * self.n_max, on))]
-            constraint_list += [cvx.NonPos(elec - self.n * self.rated_power)]
 
             constraint_list += [cvx.NonPos(self.n_min - self.n)]
             constraint_list += [cvx.NonPos(self.n - self.n_max)]
@@ -63,7 +59,6 @@ class DiscreteSizing:
         return constraint_list
 
     def objective_function(self, mask, annuity_scalar=1):
-        # TODO rename this size_objective_function() to avoid confusion --AE
         """ Generates the objective function related to a technology. Default includes O&M which can be 0
 
         Args:
@@ -80,36 +75,3 @@ class DiscreteSizing:
 
         return costs
 
-    def sizing_summary(self):
-        """
-
-        Returns: A dictionary describe this DER's size and capital costs.
-
-        """
-        # obtain the size of the battery, these may or may not be optimization variable
-        # therefore we check to see if it is by trying to get its value attribute in a try-except statement.
-        # If there is an error, then we know that it was user inputted and we just take that value instead.
-        try:
-            n = self.n.value
-        except AttributeError:
-            n = self.n
-
-        sizing_results = {
-            'DER': self.name,
-            'Power Capacity (kW)': self.rated_power,
-            'Capital Cost ($)': self.capital_cost_function[0],
-            'Capital Cost ($/kW)': self.capital_cost_function[1],
-            'Quantity': n}
-        return sizing_results
-
-    def max_power_out(self):
-        """
-
-        Returns: the maximum power that can be outputted by this genset
-
-        """
-        try:
-            power_out = self.n.value * self.rated_power
-        except AttributeError:
-            power_out = self.n * self.rated_power
-        return power_out

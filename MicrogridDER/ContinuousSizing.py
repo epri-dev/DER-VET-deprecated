@@ -11,30 +11,18 @@ __maintainer__ = ['Halley Nathwani', 'Evan Giarta', 'Miles Evans']
 __email__ = ['hnathwani@epri.com', 'egiarta@epri.com', 'mevans@epri.com']
 __version__ = 'beta'
 
-import numpy as np
-import cvxpy as cvx
+from ErrorHandelling import *
 
 
 class ContinuousSizing:
-    """ This class is to be inherited by DER classes
-    that want to also define the ability
-    to optimally size itself by kW of energy capacity,
-    assuming a single unit (n=1)
+    """ This class is to be inherited by DER classes that want to also define the ability
+    to optimally size itself by kW of energy capacity
 
     """
 
     def __init__(self, params):
-        self.max_rated_power = params['max_rated_power']
-        self.min_rated_power = params['min_rated_power']
-
+        TellUser.debug(f"Initializing {__name__}")
         self.size_constraints = []
-        if not self.rated_power:
-            self.rated_power = cvx.Variable(integer=True, name=f'{self.name}rating')
-            self.size_constraints += [cvx.NonPos(-self.rated_power)]
-            if self.min_rated_power:
-                self.size_constraints += [cvx.NonPos(self.min_rated_power - self.rated_power)]
-            if self.max_rated_power:
-                self.size_constraints += [cvx.NonPos(self.rated_power - self.max_rated_power)]
 
     def being_sized(self):
         """ checks itself to see if this instance is being sized
@@ -54,19 +42,11 @@ class ContinuousSizing:
         Returns:
             A list of constraints that corresponds the battery's physical constraints and its service constraints
         """
-        elec = self.variables_dict['elec']
-        on = self.variables_dict['on']
-        constraint_list = []
-
-        if self.being_sized():
-            constraint_list += [cvx.NonPos(elec - cvx.multiply(self.rated_power, on))]
-
-        constraint_list += self.size_constraints
+        constraint_list = self.size_constraints
 
         return constraint_list
 
     def objective_function(self, mask, annuity_scalar=1):
-        # TODO rename this size_objective_function() to avoid confusion --AE
         """ Generates the objective function related to a technology. Default includes O&M which can be 0
 
         Args:
@@ -89,18 +69,43 @@ class ContinuousSizing:
         Returns: A dictionary describe this DER's size and capital costs.
 
         """
-        # obtain the size of the battery, these may or may not be optimization variable
-        # therefore we check to see if it is by trying to get its value attribute in a try-except statement.
-        # If there is an error, then we know that it was user inputted and we just take that value instead.
-        try:
-            rated_power = self.rated_power.value
-        except AttributeError:
-            rated_power = self.rated_power
+        # template = pd.DataFrame(columns=)
+        # sizing_dict = {
+        #     'DER': np.nan,
+        #     'Energy Rating (kWh)': np.nan,
+        #     'Charge Rating (kW)': np.nan,
+        #     'Discharge Rating (kW)': np.nan,
+        #     'Round Trip Efficiency (%)': np.nan,
+        #     'Lower Limit on SOC (%)': np.nan,
+        #     'Upper Limit on SOC (%)': np.nan,
+        #     'Duration (hours)': np.nan,
+        #     'Capital Cost ($)': np.nan,
+        #     'Capital Cost ($/kW)': np.nan,
+        #     'Capital Cost ($/kWh)': np.nan,
+        #     'Power Capacity (kW)': np.nan,
+        #     'Quantity': 1,
+        # }
+        # return sizing_dict
 
-        sizing_results = {
-            'DER': self.name,
-            'Power Capacity (kW)': rated_power,
-            'Capital Cost ($)': self.capital_cost_function[0],
-            'Capital Cost ($/kW)': self.capital_cost_function[1]}
+    def sizing_error(self):
+        """
 
-        return sizing_results
+        Returns: True if there is an input error
+
+        """
+        return False
+
+    def max_p_schedule_down(self):
+        return 0
+
+    def max_p_schedule_up(self):
+        return self.max_p_schedule_down()
+
+    def is_discharge_sizing(self):
+        return self.being_sized()
+
+    def is_power_sizing(self):
+        return self.being_sized()
+
+    def max_power_defined(self):
+        return True

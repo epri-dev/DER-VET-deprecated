@@ -15,6 +15,7 @@ __version__ = 'beta'  # beta version
 from storagevet.Technology import CAESTech
 from MicrogridDER.ESSSizing import ESSSizing
 from ErrorHandelling import *
+from DERVETParams import ParamsDER
 
 
 class CAES(CAESTech.CAES, ESSSizing):
@@ -57,15 +58,22 @@ class CAES(CAESTech.CAES, ESSSizing):
         if self.being_sized():
             costs.update({self.name + 'capex': self.get_capex()})
 
-    def update_for_evaluation(self, input_dict):
-        """ Updates price related attributes with those specified in the input_dictionary
+    def update_price_signals(self, id_str, monthly_data=None, time_series_data=None):
+        """ Updates attributes related to price signals with new price signals that are saved in
+        the arguments of the method. Only updates the price signals that exist, and does not require all
+        price signals needed for this service.
 
         Args:
-            input_dict: hold input data, keys are the same as when initialized
+            monthly_data (DataFrame): monthly data after pre-processing
+            time_series_data (DataFrame): time series data after pre-processing
 
         """
-        super().update_for_evaluation(input_dict)
-
-        heat_rate_high = input_dict.get('heat_rate_high')
-        if heat_rate_high is not None:
-            self.heat_rate_high = heat_rate_high
+        if monthly_data is not None:
+            freq = self.fuel_price.freq
+            try:
+                self.fuel_price = ParamsDER.monthly_to_timeseries(freq, monthly_data.loc[:, [f"Natural Gas Price ($/MillionBTU)/{id_str}"]]),
+            except KeyError:
+                try:
+                    self.fuel_price = ParamsDER.monthly_to_timeseries(freq, monthly_data.loc[:, [f"Natural Gas Price ($/MillionBTU)"]]),
+                except KeyError:
+                    pass

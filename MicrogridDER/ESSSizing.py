@@ -12,7 +12,7 @@ __maintainer__ = ['Halley Nathwani', 'Miles Evans']
 __email__ = ['hnathwani@epri.com', 'mevans@epri.com']
 __version__ = 'beta'  # beta version
 
-from MicrogridDER.Sizing import Sizing
+from MicrogridDER.ContinuousSizing import ContinuousSizing
 from storagevet.Technology.EnergyStorage import EnergyStorage
 from MicrogridDER.DERExtension import DERExtension
 import cvxpy as cvx
@@ -20,7 +20,7 @@ from ErrorHandelling import *
 import numpy as np
 
 
-class ESSSizing(EnergyStorage, DERExtension, Sizing):
+class ESSSizing(EnergyStorage, DERExtension, ContinuousSizing):
     """ Extended ESS class that can also be sized
 
     """

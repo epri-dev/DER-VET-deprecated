@@ -18,8 +18,8 @@ from MicrogridDER.CAES import CAES
 from MicrogridDER.PV import PV
 from MicrogridDER.ICE import ICE
 from MicrogridDER.DieselGenset import DieselGenset
-from MicrogridDER.CT import CT
-from MicrogridDER.CHP import CHP
+from MicrogridDER.CombustionTurbine import CT
+from MicrogridDER.CombinedHeatPower import CHP
 from MicrogridDER.LoadControllable import ControllableLoad
 from storagevet.ValueStreams.DAEnergyTimeShift import DAEnergyTimeShift
 from storagevet.ValueStreams.FrequencyRegulation import FrequencyRegulation

@@ -112,6 +112,18 @@ class DERExtension:
         if ccost_kwh is not None:
             self.capital_cost_function[2] = ccost_kwh
 
+    def update_price_signals(self, id_str, monthly_data=None, time_series_data=None):
+        """ Updates attributes related to price signals with new price signals that are saved in
+        the arguments of the method. Only updates the price signals that exist, and does not require all
+        price signals needed for this service.
+
+        Args:
+            monthly_data (DataFrame): monthly data after pre-processing
+            time_series_data (DataFrame): time series data after pre-processing
+
+        """
+        pass
+
     def decommissioning_report(self, last_year):
         """ Returns the cost of decommissioning a DER and the year the cost will be incurred
 

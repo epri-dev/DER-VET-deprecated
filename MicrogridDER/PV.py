@@ -14,13 +14,13 @@ __version__ = 'beta'  # beta version
 
 import cvxpy as cvx
 from storagevet.Technology import PVSystem
-from MicrogridDER.Sizing import Sizing
+from MicrogridDER.ContinuousSizing import ContinuousSizing
 from MicrogridDER.DERExtension import DERExtension
 from ErrorHandelling import *
 import numpy as np
 
 
-class PV(PVSystem.PV, Sizing, DERExtension):
+class PV(PVSystem.PV, DERExtension, ContinuousSizing):
     """ Assumes perfect foresight. Ability to curtail PV generation
 
     """
@@ -33,17 +33,12 @@ class PV(PVSystem.PV, Sizing, DERExtension):
         Args:
             params (dict): Dict of parameters
         """
+        TellUser.debug(f"Initializing {__name__}")
         # create generic technology object
-        PVSystem.PV.__init__(self, params)
-        Sizing.__init__(self)
-        DERExtension.__init__(self, params)
-
+        super(PV, self).__init__(params)
         self.curtail = params['curtail']
         self.max_rated_capacity = params['max_rated_capacity']
         self.min_rated_capacity = params['min_rated_capacity']
-        if not self.curtail:
-            # if we are not curatiling, then we do not need any variables
-            self.variable_names = {}
         if not self.rated_capacity:
             self.rated_capacity = cvx.Variable(name='PV rating', integer=True)
             self.inv_max = self.rated_capacity
@@ -74,7 +69,6 @@ class PV(PVSystem.PV, Sizing, DERExtension):
             A list of constraints that corresponds the battery's physical constraints and its service constraints
         """
         constraints = super().constraints(mask)
-        constraints += self.size_constraints
         return constraints
 
     def objective_function(self, mask, annuity_scalar=1):
@@ -88,10 +82,7 @@ class PV(PVSystem.PV, Sizing, DERExtension):
         Returns:
             self.costs (Dict): Dict of objective costs
         """
-        costs = dict()
-
-        if self.being_sized():
-            costs.update({self.name + 'capex': self.get_capex()})
+        costs = super(PV, self).objective_function(mask, annuity_scalar)
 
         return costs
 
