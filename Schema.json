@@ -663,13 +663,13 @@
                         "cba": "n",
                         "min": "0.0",
                         "type": "float",
-                        "unit": "gal/kWh"
+                        "unit": "Btu/kWh"
                     },
                     "fuel_cost": {
                         "cba": "y",
                         "min": "0.0",
                         "type": "float",
-                        "unit": "$/gal"
+                        "unit": "$/MMBtu"
                     },
                     "variable_om_cost": {
                         "cba": "y",
@@ -1142,13 +1142,13 @@
                         "cba": "y",
                         "min": "0.0",
                         "type": "float",
-                        "unit": "$/gal"
+                        "unit": "$/MMBtu"
                     },
                     "efficiency": {
                         "cba": "n",
                         "min": "0.0",
                         "type": "float",
-                        "unit": "gal/kWh"
+                        "unit": "Btu/kWh"
                     },
                     "variable_om_cost": {
                         "cba": "y",
