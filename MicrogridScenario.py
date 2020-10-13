@@ -22,6 +22,7 @@ from MicrogridDER.CombustionTurbine import CT
 from MicrogridDER.CombinedHeatPower import CHP
 from MicrogridDER.LoadControllable import ControllableLoad
 from MicrogridDER.ElectricVehicles import ElectricVehicle1, ElectricVehicle2
+from MicrogridDER.Chiller import Chiller
 from storagevet.ValueStreams.DAEnergyTimeShift import DAEnergyTimeShift
 from storagevet.ValueStreams.FrequencyRegulation import FrequencyRegulation
 from storagevet.ValueStreams.NonspinningReserve import NonspinningReserve
@@ -64,6 +65,7 @@ class MicrogridScenario(Scenario):
             'DieselGenset': input_tree.DieselGenset,
             'CT': input_tree.CT,
             'CHP': input_tree.CHP,
+            'Chiller': input_tree.Chiller,
         })
         self.value_stream_input_map.update({'Reliability': input_tree.Reliability})
         self.deferral_sizing = False
@@ -84,6 +86,7 @@ class MicrogridScenario(Scenario):
             'Load': ControllableLoad,
             'ElectricVehicle1': ElectricVehicle1,
             'ElectricVehicle2': ElectricVehicle2,
+            'Chiller': Chiller,
         }
 
         value_stream_class_map = {
@@ -152,7 +155,7 @@ class MicrogridScenario(Scenario):
         if error:
             raise ParameterError("Further calculations requires that economic dispatch is solved, but "
                                  + "no optimization was built or solved. Please check log files for more information. ")
-        
+
     def fill_and_drop_extra_data(self):
         """ Go through value streams and technologies and keep data for analysis years, and add more
         data if necessary.  ALSO creates/assigns optimization levels.

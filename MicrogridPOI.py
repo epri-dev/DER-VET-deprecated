@@ -32,19 +32,23 @@ class MicrogridPOI(POI):
             self.error_checks_on_sizing()
 
         # add thermal site load time series
+        # NOTE: these loads can come from different technologies
+        self.site_cooling_load = None
+        self.site_steam_load = None
+        self.site_hotwater_load = None
         for der in self.active_ders:
             try:
                 self.site_steam_load = der.site_steam_load
             except AttributeError:
-                self.site_steam_load = None
+                pass
             try:
                 self.site_hotwater_load = der.site_hotwater_load
             except AttributeError:
-                self.site_hotwater_load = None
+                pass
             try:
                 self.site_cooling_load = der.site_cooling_load
             except AttributeError:
-                self.site_cooling_load = None
+                pass
 
     def check_if_sizing_ders(self):
         """ This method will iterate through the initialized DER instances and return a logical OR of all of their

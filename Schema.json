@@ -1918,12 +1918,7 @@
                     },
                     "ter": {
                         "cba": "n",
-                        "max": "100.0","fixed_om_cost": {
-                        "cba": "y",
-                        "min": "0.0",
-                        "type": "float",
-                        "unit": "$/year"
-                    },
+                        "max": "100.0",
                         "min": "-100.0",
                         "type": "float",
                         "unit": "%"
@@ -2026,6 +2021,165 @@
                         "min": "0.0",
                         "type": "float",
                         "unit": "$"
+                    },
+                    "acr": {
+                        "cba": "n",
+                        "max": "100.0",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "%"
+                    },
+                    "ter": {
+                        "cba": "n",
+                        "max": "100.0",
+                        "min": "-100.0",
+                        "type": "float",
+                        "unit": "%"
+                    },
+                    "ecc%": {
+                        "cba": "n",
+                        "max": "100.0",
+                        "min": "-100.0",
+                        "type": "float",
+                        "unit": "%"
+                    }
+                }
+            },
+            "Chiller": {
+                "type": "thermal",
+                "keys": {
+                    "name": {
+                        "cba": "n",
+                        "type": "string"
+                    },
+                    "nsr_response_time": {
+                        "cba": "n",
+                        "min": "0",
+                        "type": "int",
+                        "unit": "minutes"
+                    },
+                    "sr_response_time": {
+                        "cba": "n",
+                        "min": "0",
+                        "type": "int",
+                        "unit": "minutes"
+                    },
+                    "macrs_term": {
+                        "allowed_values": "3|5|7|10|15|20|25|27.5|39",
+                        "cba": "n",
+                        "type": "float"
+                    },
+                    "min_power": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "tons"
+                    },
+                    "startup_time": {
+                        "cba": "n",
+                        "min": "0",
+                        "type": "int",
+                        "unit": "minutes"
+                    },
+                    "power_source": {
+                        "allowed_values": "electricity|natural gas|heat",
+                        "cba": "n",
+                        "type": "string"
+                    },
+                    "coefficient_of_performance": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "ratio"
+                    },
+                    "fuel_cost": {
+                        "cba": "y",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "$/gal"
+                    },
+                    "fixed_om_cost": {
+                        "cba": "y",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "$/ton-year"
+                    },
+                    "max_rated_capacity": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "tons/chiller"
+                    },
+                    "min_rated_capacity": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "tons/chiller"
+                    },
+                    "rated_capacity": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "tons/chiller"
+                    },
+                    "ccost": {
+                        "cba": "y",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "$/chiller"
+                    },
+                    "ccost_ton": {
+                        "cba": "y",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "$/ton-chiller"
+                    },
+                    "n": {
+                        "cba": "n",
+                        "min": "0",
+                        "type": "int",
+                        "unit": "chillers"
+                    },
+                    "construction_year": {
+                        "cba": "n",
+                        "type": "Period",
+                        "unit": "year"
+                    },
+                    "operation_year": {
+                        "cba": "n",
+                        "type": "Period",
+                        "unit": "year"
+                    },
+                    "decommissioning_cost": {
+                        "cba": "n",
+                        "type": "float",
+                        "unit": "$"
+                    },
+                    "salvage_value": {
+                        "cba": "n",
+                        "allowed_values": "sunk cost|linear salvage value|BOUND",
+                        "type": "string/int"
+                    },
+                    "expected_lifetime": {
+                        "cba": "n",
+                        "type": "int",
+                        "unit": "years"
+                    },
+                    "replaceable": {
+                        "type": "bool",
+                        "allowed_values": "1|0"
+                    },
+                    "rcost": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "$/chiller"
+                    },
+                    "rcost_kW": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "$/kW"
                     },
                     "acr": {
                         "cba": "n",

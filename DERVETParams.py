@@ -142,6 +142,7 @@ class ParamsDER(Params):
         self.CHP = self.read_and_validate('CHP')
         self.ElectricVehicle1 = self.read_and_validate('ElectricVehicle1')
         self.ElectricVehicle2 = self.read_and_validate('ElectricVehicle2')
+        self.Chiller = self.read_and_validate('Chiller')
 
     @classmethod
     def bad_active_combo(cls):
@@ -152,8 +153,7 @@ class ParamsDER(Params):
 
         """
         slf = cls.template
-        # TODO: add EVs and other technologies here? -AE
-        other_ders = any([len(slf.CHP), len(slf.CT), len(slf.DieselGenset)])
+        other_ders = any([len(slf.CHP), len(slf.CT), len(slf.DieselGenset), len(slf.Chiller), len(slf.ElectricVehicle1), len(slf.ElectricVehicle2)])
         super().bad_active_combo(dervet=True, other_ders=other_ders)
 
     @classmethod
@@ -636,6 +636,30 @@ class ParamsDER(Params):
                                      'dt': dt})
                 except KeyError:
                     self.record_input_error(f"Missing 'EV fleet/{id_str}' from timeseries input. Please include EV load.")
+
+        if self.Chiller is not None:
+            if not self.Scenario['incl_thermal_load']:
+                TellUser.warning('with incl_thermal_load = 0, Chiller will ignore any site thermal loads.')
+            for id_str, chiller_input in self.Chiller.items():
+                chiller_input.update({'dt': dt})
+
+                # add time series, monthly data, and any scenario case parameters to CHP parameter dictionary
+                if self.Scenario['incl_thermal_load']:
+                    try:
+                        chiller_input.update({'site_cooling_load': time_series.loc[:, 'Site Cooling Thermal Load (BTU/hr)']})
+                    except:
+                        pass
+                    if chiller_input.get('site_cooling_load') is None:
+                        # report error when thermal load does not have cooling load
+                        self.record_input_error("Chiller is missing a site cooling load ('Site Cooling Thermal Load (BTU/hr)') from timeseries data input")
+
+                if chiller_input['power_source'] == 'natural gas':
+                    try:
+                        chiller_input.update({'natural_gas_price': self.monthly_to_timeseries(self.Scenario['frequency'],
+                                                                                          self.Scenario['monthly_data'].loc[:, ['Natural Gas Price ($/MillionBTU)']])})
+                    except KeyError:
+                        self.record_input_error("Missing 'Natural Gas Price ($/MillionBTU)' from monthly data input")
+
 
         super().load_technology(names_list)
 
