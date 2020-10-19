@@ -152,7 +152,7 @@ class MicrogridScenario(Scenario):
         if error:
             raise ParameterError("Further calculations requires that economic dispatch is solved, but "
                                  + "no optimization was built or solved. Please check log files for more information. ")
-        
+
     def fill_and_drop_extra_data(self):
         """ Go through value streams and technologies and keep data for analysis years, and add more
         data if necessary.  ALSO creates/assigns optimization levels.
@@ -167,6 +167,10 @@ class MicrogridScenario(Scenario):
 
     def initialize_cba(self):
         self.cost_benefit_analysis = CostBenefitAnalysis(self.finance_inputs)
+        # add fuel_cost to active DERs that can consume fuel
+        for der in self.poi.der_list:
+            der.set_fuel_cost(self.cost_benefit_analysis.get_fuel_cost)
+
         # set the project end year
         self.end_year = self.cost_benefit_analysis.find_end_year(self.start_year, self.end_year, self.poi.der_list)
         if self.end_year.year == 0:

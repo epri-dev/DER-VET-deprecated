@@ -34,7 +34,7 @@ class ParamsDER(Params):
     cba_input_error_raised = False
     cba_input_template = None
     # TODO add to this as needed --AE
-    dervet_only_der_list = ['CT', 'CHP', 'DieselGenset', 'ControllableLoad', 'EV']
+    dervet_only_der_list = ['CT', 'CHP', 'DieselGenset', 'EV']
 
     @staticmethod
     def csv_to_json(csv_filename, ignore_cba_valuation=False):
@@ -174,8 +174,8 @@ class ParamsDER(Params):
             'CT': cls.read_and_validate_evaluation('CT'),
             'CHP': cls.read_and_validate_evaluation('CHP'),
             'PV': cls.read_and_validate_evaluation('PV'),  # cost_per_kW (and then recalculate capex)
-            'ICE': cls.read_and_validate_evaluation('ICE'),  # fuel_price,
-            'DieselGenset': cls.read_and_validate_evaluation('DieselGenset'),  # fuel_price,
+            'ICE': cls.read_and_validate_evaluation('ICE'),
+            'DieselGenset': cls.read_and_validate_evaluation('DieselGenset'),
             # 'ControllableLoad': cls.read_and_validate_evaluation('ControllableLoad')
         }
 
@@ -591,21 +591,9 @@ class ParamsDER(Params):
                             chp_inputs.update({'site_hotwater_load': all_zeroes})
                             TellUser.warning('since "site hotwater thermal load" data were not input, we create a time series with all zeroes for it')
 
-                try:
-                    chp_inputs.update({'natural_gas_price': self.monthly_to_timeseries(self.Scenario['frequency'],
-                                                                                       self.Scenario['monthly_data'].loc[:, ['Natural Gas Price ($/MillionBTU)']])})
-                except KeyError:
-                    self.record_input_error("Missing 'Natural Gas Price ($/MillionBTU)' from monthly data input")
-
         if len(self.CT):
             for id_str, ct_inputs in self.CT.items():
                 ct_inputs.update({'dt': dt})
-
-                try:
-                    ct_inputs.update({'natural_gas_price': self.monthly_to_timeseries(self.Scenario['frequency'],
-                                                                                       self.Scenario['monthly_data'].loc[:, ['Natural Gas Price ($/MillionBTU)']])})
-                except KeyError:
-                    self.record_input_error("Missing 'Natural Gas Price ($/MillionBTU)' from monthly data input")
 
         if len(self.DieselGenset):
             for id_str, inputs in self.DieselGenset.items():

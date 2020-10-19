@@ -60,16 +60,3 @@ class ICE(InternalCombustionEngine.ICE, RotatingGeneratorSizing):
         costs = super().objective_function(mask, annuity_scalar)
 
         return costs
-
-    def update_for_evaluation(self, input_dict):
-        """ Updates price related attributes with those specified in the input_dictionary
-
-        Args:
-            input_dict: hold input data, keys are the same as when initialized
-
-        """
-        super().update_for_evaluation(input_dict)
-
-        fuel_cost = input_dict.get('fuel_cost')
-        if fuel_cost is not None:
-            self.fuel_cost = fuel_cost
