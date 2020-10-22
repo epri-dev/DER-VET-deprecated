@@ -2123,6 +2123,11 @@
                         "type": "float",
                         "unit": "tons/chiller"
                     },
+                    "fuel_type": {
+                        "cba": "y",
+                        "allowed_values": "liquid|gas|other",
+                        "type": "string"
+                    },
                     "ccost": {
                         "cba": "y",
                         "min": "0.0",

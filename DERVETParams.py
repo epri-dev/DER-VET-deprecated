@@ -641,14 +641,6 @@ class ParamsDER(Params):
                         # report error when thermal load does not have cooling load
                         self.record_input_error("Chiller is missing a site cooling load ('Site Cooling Thermal Load (BTU/hr)') from timeseries data input")
 
-                if chiller_input['power_source'] == 'natural gas':
-                    try:
-                        chiller_input.update({'natural_gas_price': self.monthly_to_timeseries(self.Scenario['frequency'],
-                                                                                          self.Scenario['monthly_data'].loc[:, ['Natural Gas Price ($/MillionBTU)']])})
-                    except KeyError:
-                        self.record_input_error("Missing 'Natural Gas Price ($/MillionBTU)' from monthly data input")
-
-
         super().load_technology(names_list)
 
     def load_ts_limits(self, id_str, inputs_dct, tag, measurement, unit, time_series):

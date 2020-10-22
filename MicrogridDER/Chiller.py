@@ -19,6 +19,7 @@ __version__ = 'beta'  # beta version
 
 import cvxpy as cvx
 import numpy as np
+import storagevet.Library as Lib
 from storagevet.Technology.DistributedEnergyResource import DER
 from MicrogridDER.DERExtension import DERExtension
 from MicrogridDER.ContinuousSizing import ContinuousSizing
@@ -55,13 +56,13 @@ class Chiller(DER, ContinuousSizing, DERExtension):
         self.rated_power = KW_PER_TON * params['rated_capacity']  # tons/chiller
 
         self.ccost = params['ccost']  # $/chiller
-        self.ccost_ton = params['ccost_ton'] / KW_PER_TON  # $/tons-chiller
-        #self.capital_cost_function = [params['ccost'],
-        #                              params['ccost_ton']]
+        self.ccost_kW = params['ccost_ton'] / KW_PER_TON  # $/tons-chiller
+        self.capital_cost_function = [self.ccost, self.ccost_kW]
 
-        self.fixed_om_cost = params['fixed_om_cost'] / KW_PER_TON  # $ / ton-year
+        self.fixed_om = params['fixed_om_cost'] / KW_PER_TON  # $ / ton-year
 
         self.n = params['n']  # number of chillers (integer)
+        self.fuel_type = params['fuel_type']
 
         self.is_cold = True
         self.is_fuel = True
@@ -87,9 +88,80 @@ class Chiller(DER, ContinuousSizing, DERExtension):
 
     def initialize_variables(self, size):
         # TODO -- add rated_capacity sizing optimization variable here, when sizing
+        # NOTE: this is handled by size_constraints
         self.variables_dict = {
             'cold': cvx.Variable(shape=size, name=f'{self.name}-coldP', nonneg=True),
         }
+
+    def constraints(self, mask, **kwargs):
+        constraint_list = super().constraints(mask)
+        cold = self.variables_dict['cold']
+
+        if self.power_source == 'electricity':
+            # TODO -- add the additional electricl load
+            constraint_list += [cvx.Zero(cold / self.cop)]
+
+        elif self.power_source == 'natural_gas':
+            # TODO -- add the additional NG use
+            constraint_list += [cvx.Zero(cold / self.cop)]
+
+        elif self.power_source == 'heat':
+            # TODO -- add the additional heat load
+            constraint_list += [cvx.Zero(cold / self.cop)]
+
+        constraint_list += self.size_constraints
+        return constraint_list
+
+    def get_cold_recovered(self, mask):
+        # thermal power is recovered in a Chiller whenever electric power is being generated
+        # it is proportional to the electric power generated at a given time
+        return self.variables_dict['cold']
+
+
+    def objective_function(self, mask, annuity_scalar=1):
+        # TODO -- this needs fixes
+        costs = super().objective_function(mask, annuity_scalar)
+        costs.update(self.sizing_objective())
+
+        # TODO -- fix this ? use power_in ?
+        total_out = self.variables_dict['cold']
+
+        costs.update({
+            self.name + ' fixed': self.fixed_om * annuity_scalar,
+            self.name + ' variable': cvx.sum(self.variable_om * self.dt * annuity_scalar * total_out)
+        })
+
+        if self.power_source == 'electricity':
+            print('')
+        elif self.power_source == 'natural_gas':
+            # add fuel cost in $/kWh
+            fuel_exp = cvx.sum(total_out * self.cop * self.fuel_cost * self.dt * annuity_scalar)
+            costs.update({self.name + ' fuel_cost': fuel_exp})
+        elif self.power_source == 'heat':
+            print('')
+
+        return costs
+
+    def update_for_evaluation(self, input_dict):
+        """ Updates price related attributes with those specified in the input_dictionary
+
+        Args:
+            input_dict: hold input data, keys are the same as when initialized
+
+        """
+        super().update_for_evaluation(input_dict)
+
+        variable_cost = input_dict.get('variable_om_cost')
+        if variable_cost is not None:
+            self.variable_om = variable_cost
+
+        fixed_om_cost = input_dict.get('fixed_om_cost')
+        if variable_cost is not None:
+            self.fixed_om = fixed_om_cost
+
+        ccost_kw = input_dict.get('ccost_kW')
+        if ccost_kw is not None:
+            self.capital_cost_function[1] = ccost_kw
 
     def discharge_capacity(self, solution=False):
         """ Returns: the maximum discharge that can be attained
@@ -120,51 +192,6 @@ class Chiller(DER, ContinuousSizing, DERExtension):
             except AttributeError:
                 rated_power = self.rated_power
             return rated_power
-
-    def constraints(self, mask, **kwargs):
-        constraint_list = super().constraints(mask)
-        cold = self.variables_dict['cold']
-
-        if self.power_source == 'electricity':
-            # TODO -- add the additional electricl load
-            constraint_list += [cvx.Zero(cold / self.cop)]
-
-        elif self.power_source == 'natural_gas':
-            # TODO -- add the additional NG use
-            constraint_list += [cvx.Zero(cold / self.cop)]
-
-        elif self.power_source == 'heat':
-            # TODO -- add the additional heat load
-            constraint_list += [cvx.Zero(cold / self.cop)]
-
-        constraint_list += self.size_constraints
-        return constaint_list
-
-    def objective_function(self, mask, annuity_scalar=1):
-        costs = super().objective_function(mask, annuity_scalar)
-        costs.update(self.sizing_objective())
-        return costs
-
-    def update_for_evaluation(self, input_dict):
-        """ Updates price related attributes with those specified in the input_dictionary
-
-        Args:
-            input_dict: hold input data, keys are the same as when initialized
-
-        """
-        super().update_for_evaluation(input_dict)
-
-        variable_cost = input_dict.get('variable_om_cost')
-        if variable_cost is not None:
-            self.variable_om = variable_cost
-
-        fixed_om_cost = input_dict.get('fixed_om_cost')
-        if variable_cost is not None:
-            self.fixed_om = fixed_om_cost
-
-        ccost_kw = input_dict.get('ccost_kW')
-        if ccost_kw is not None:
-            self.capital_cost_function[1] = ccost_kw
 
     def set_size(self):
         """ Save value of size variables of DERs
@@ -210,4 +237,22 @@ class Chiller(DER, ContinuousSizing, DERExtension):
     def get_capex(self):
         """ Returns the capex of a given technology
         """
-        return self.capital_cost_function
+        return np.dot(self.capital_cost_function, [self.n, self.discharge_capacity()])
+
+    #def qualifying_capacity(self, event_length):
+
+    def timeseries_report(self):
+        tech_id = self.unique_tech_id()
+        results = super().timeseries_report()
+        # results = pd.DataFrame(index=self.variables_df.index)
+
+        results[tech_id + ' Cold Generation (kW)'] = self.variables_df['cold']
+        if self.site_cooling_load is not None:
+            results[tech_id + ' Site Cooling Thermal Load (BTU/hr)'] = self.site_cooling_load
+
+    # def proforma_report(self, opt_years, results):
+        # TODO -- fill this in
+
+    #def get_discharge(self, mask):
+
+

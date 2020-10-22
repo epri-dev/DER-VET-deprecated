@@ -77,7 +77,7 @@ class CHP(CT):
 
         # to ensure that the upper limit on CHP size in the size optimization
         #     will be the smallest system that can meet both hotwater and steam loads
-        if self.being_sized():
+        if self.being_sized() and self.site_steam_load is not None and self.site_hotwater_load is not None:
             constraint_list += [cvx.NonPos(elec - self.size_upper_limit())]
 
         return constraint_list
