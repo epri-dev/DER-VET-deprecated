@@ -38,7 +38,7 @@ class RotatingGeneratorSizing(RotatingGenerator, DERExtension, ContinuousSizing)
         self.max_rated_power = params['max_rated_capacity']
         self.min_rated_power = params['min_rated_capacity']
         if not self.rated_power:
-            self.rated_power = cvx.Variable(integer=True, name=f'{self.name}rating')
+            self.rated_power = cvx.Variable(integer=True, name=f'{self.name} rating')
             self.size_constraints += [cvx.NonPos(-self.rated_power)]
             if self.min_rated_power:
                 self.size_constraints += [cvx.NonPos(self.min_rated_power - self.rated_power)]

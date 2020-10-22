@@ -663,13 +663,12 @@
                         "cba": "n",
                         "min": "0.0",
                         "type": "float",
-                        "unit": "gal/kWh"
+                        "unit": "MMBtu/MWh"
                     },
-                    "fuel_cost": {
+                    "fuel_type": {
                         "cba": "y",
-                        "min": "0.0",
-                        "type": "float",
-                        "unit": "$/gal"
+                        "allowed_values": "liquid|gas|other",
+                        "type": "string"
                     },
                     "variable_om_cost": {
                         "cba": "y",
@@ -813,6 +812,11 @@
                         "type": "float",
                         "unit": "kW"
                     },
+                    "fuel_type": {
+                        "cba": "y",
+                        "allowed_values": "liquid|gas|other",
+                        "type": "string"
+                    },
                     "startup_time": {
                         "cba": "n",
                         "min": "0",
@@ -834,7 +838,7 @@
                         "cba": "y",
                         "min": "0.0",
                         "type": "float",
-                        "unit": "BTU/kWh"
+                        "unit": "MMBtu/MWh"
                     },
                     "variable_om_cost": {
                         "cba": "y",
@@ -990,11 +994,16 @@
                         "type": "int",
                         "unit": "minutes"
                     },
+                    "fuel_type": {
+                        "cba": "y",
+                        "allowed_values": "liquid|gas|other",
+                        "type": "string"
+                    },
                     "heat_rate": {
                         "cba": "y",
                         "min": "0.0",
                         "type": "float",
-                        "unit": "BTU/kWh"
+                        "unit": "MMBtu/MWh"
                     },
                     "variable_om_cost": {
                         "cba": "y",
@@ -1138,17 +1147,16 @@
                         "type": "int",
                         "unit": "minutes"
                     },
-                    "fuel_cost": {
+                    "fuel_type": {
                         "cba": "y",
-                        "min": "0.0",
-                        "type": "float",
-                        "unit": "$/gal"
+                        "allowed_values": "liquid|gas|other",
+                        "type": "string"
                     },
                     "efficiency": {
                         "cba": "n",
                         "min": "0.0",
                         "type": "float",
-                        "unit": "gal/kWh"
+                        "unit": "MMBtu/MWh"
                     },
                     "variable_om_cost": {
                         "cba": "y",
@@ -1311,7 +1319,7 @@
                         "type": "float",
                         "unit": "$/kW"
                     },
-                    "ccost_kwh": {
+                    "ccost_kWh": {
                         "cba": "y",
                         "min": "0.0",
                         "type": "float",
@@ -1607,7 +1615,12 @@
                     "heat_rate_high": {
                         "min": "0.0",
                         "type": "float",
-                        "unit": "BTU/kWh"
+                        "unit": "MMBtu/MWh"
+                    },
+                    "fuel_type": {
+                        "cba": "y",
+                        "allowed_values": "liquid|gas|other",
+                        "type": "string"
                     },
                     "startup": {
                         "type": "bool",
@@ -1624,7 +1637,7 @@
                         "type": "float",
                         "unit": "$/kW"
                     },
-                    "ccost_kwh": {
+                    "ccost_kWh": {
                         "min": "0.0",
                         "type": "float",
                         "unit": "$"
@@ -2363,6 +2376,24 @@
                     "customer_tariff_filename": {
                         "cba": "y",
                         "type": "string"
+                    },
+                    "fuel_price_liquid": {
+                        "cba": "y",
+                        "type": "float",
+                        "min": "0.0",
+                        "unit": "$/MMBtu"
+                    },
+                    "fuel_price_gas": {
+                        "cba": "y",
+                        "type": "float",
+                        "min": "0.0",
+                        "unit": "$/MMBtu"
+                    },
+                    "fuel_price_other": {
+                        "cba": "y",
+                        "type": "float",
+                        "min": "0.0",
+                        "unit": "$/MMBtu"
                     },
                     "analysis_horizon_mode": {
                         "cba": "n",

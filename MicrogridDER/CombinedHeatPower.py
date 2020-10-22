@@ -13,6 +13,7 @@ __email__ = ['hnathwani@epri.com', 'mevans@epri.com']
 __version__ = 'beta'  # beta version
 
 import cvxpy as cvx
+import numpy as np
 from MicrogridDER.CombustionTurbine import CT
 import storagevet.Library as Lib
 from ErrorHandelling import *
@@ -74,6 +75,11 @@ class CHP(CT):
 
         constraint_list += [cvx.Zero((steam + hotwater) * self.electric_heat_ratio - elec)]
 
+        # to ensure that the upper limit on CHP size in the size optimization
+        #     will be the smallest system that can meet both hotwater and steam loads
+        if self.being_sized():
+            constraint_list += [cvx.NonPos(elec - self.size_upper_limit())]
+
         return constraint_list
 
     def get_steam_recovered(self, mask):
@@ -85,6 +91,23 @@ class CHP(CT):
         # thermal power is recovered in a CHP plant whenever electric power is being generated
         # it is proportional to the electric power generated at a given time
         return self.variables_dict['hotwater']
+
+    def size_upper_limit(self):
+        # determine the smallest sized system that can meet both hotwater and steam loads
+        site_thermal_load_ratio = self.site_steam_load / self.site_hotwater_load
+        ul_mask = (site_thermal_load_ratio > self.max_steam_ratio)
+        size_needed_to_meet_thermal_loads = np.where(ul_mask,
+            # (where ul_mask is true)
+            #   steam load is too large, so the system throws away hotwater.
+            #   thus the total thermal energy is steam load plus the amount of hotwater produced
+            #   as a result of steam generation
+            self.electric_heat_ratio*(self.site_steam_load / self.max_steam_ratio + self.site_steam_load),
+            # (where ul_mask is false)
+            self.electric_heat_ratio*(self.site_steam_load + self.site_hotwater_load)
+        )
+        upper_limit = size_needed_to_meet_thermal_loads.max()
+        print(f'CHP size_upper_limit = {upper_limit}')
+        return upper_limit
 
     def timeseries_report(self):
 
