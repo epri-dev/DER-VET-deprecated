@@ -2069,12 +2069,6 @@
                         "cba": "n",
                         "type": "float"
                     },
-                    "min_power": {
-                        "cba": "n",
-                        "min": "0.0",
-                        "type": "float",
-                        "unit": "tons"
-                    },
                     "startup_time": {
                         "cba": "n",
                         "min": "0",
@@ -2091,12 +2085,6 @@
                         "min": "0.0",
                         "type": "float",
                         "unit": "ratio"
-                    },
-                    "fuel_cost": {
-                        "cba": "y",
-                        "min": "0.0",
-                        "type": "float",
-                        "unit": "$/gal"
                     },
                     "fixed_om_cost": {
                         "cba": "y",

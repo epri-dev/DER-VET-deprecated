@@ -72,7 +72,7 @@ class Chiller(DER, ContinuousSizing, DERExtension):
         self.max_rated_power = KW_PER_TON * params['max_rated_capacity']  # tons/chiller
         self.min_rated_power = KW_PER_TON * params['min_rated_capacity'] # tons/chiller
         if not self.rated_power:
-            self.rated_power = cvx.Variable(integer=True, name=f'{self.name}rating')
+            self.rated_power = cvx.Variable(integer=True, name=f'{self.name} rating')
             self.size_constraints += [cvx.NonPos(-self.rated_power)]
             if self.min_rated_power:
                 self.size_constraints += [cvx.NonPos(self.min_rated_power - self.rated_power)]
@@ -91,9 +91,35 @@ class Chiller(DER, ContinuousSizing, DERExtension):
             'cold': cvx.Variable(shape=size, name=f'{self.name}-coldP', nonneg=True),
         }
 
-    #def discharge_capacity(self, solution=False):
-    #def name_plate_capacity(self, solution=False):
+    def discharge_capacity(self, solution=False):
+        """ Returns: the maximum discharge that can be attained
+        """
+        if not solution or not self.being_sized():
+            return super().discharge_capacity()
+        else:
+            try:
+                rated_power = self.rated_power.value
+            except AttributeError:
+                rated_power = self.rated_power
+            return rated_power * self.n
 
+    def name_plate_capacity(self, solution=False):
+        """ Returns the value of 1 generator in a set of generators
+
+        Args:
+            solution:
+
+        Returns:
+
+        """
+        if not solution:
+            return self.rated_power
+        else:
+            try:
+                rated_power = self.rated_power.value
+            except AttributeError:
+                rated_power = self.rated_power
+            return rated_power
 
     def constraints(self, mask, **kwargs):
         constraint_list = super().constraints(mask)
@@ -119,17 +145,69 @@ class Chiller(DER, ContinuousSizing, DERExtension):
         costs.update(self.sizing_objective())
         return costs
 
-    #def update_for_evaluation(self, input_dict):
+    def update_for_evaluation(self, input_dict):
+        """ Updates price related attributes with those specified in the input_dictionary
 
-    #def set_size(self):
-    #def sizing_summary(self):
+        Args:
+            input_dict: hold input data, keys are the same as when initialized
+
+        """
+        super().update_for_evaluation(input_dict)
+
+        variable_cost = input_dict.get('variable_om_cost')
+        if variable_cost is not None:
+            self.variable_om = variable_cost
+
+        fixed_om_cost = input_dict.get('fixed_om_cost')
+        if variable_cost is not None:
+            self.fixed_om = fixed_om_cost
+
+        ccost_kw = input_dict.get('ccost_kW')
+        if ccost_kw is not None:
+            self.capital_cost_function[1] = ccost_kw
+
+    def set_size(self):
+        """ Save value of size variables of DERs
+        """
+        self.rated_power = self.name_plate_capacity(True)
+
+    def sizing_summary(self):
+        """ Returns: A dictionary describe this DER's size and captial costs.
+        """
+        sizing_results = {
+            'DER': self.name,
+            'Power Capacity (kW)': self.name_plate_capacity(True),
+            'Capital Cost ($)': self.capital_cost_function[0],
+            'Capital Cost ($/kW)': self.capital_cost_function[1],
+            'Quantity': self.n}
+        return sizing_results
+
     #def sizing_error(self):
-    #def replacement_cost(self):
-    #def max_p_schedule_down(self):
-    #def max_power_out(self):
+        # handled in the parent class  (will NOT error)
+        # min_power is not specified with this technology,
+        #   meaning we allow chillers to operate anywhere between 0 tons and their rated capacity
+
+    def replacement_cost(self):
+        """ Returns: the cost of replacing this DER
+        """
+        return np.dot(self.replacement_cost_function, [self.n, self.discharge_capacity(True)])
+
+    def max_p_schedule_down(self):
+        # TODO -- is this needed in a thermal technology ?
+        # ability to provide regulation down through discharging less
+        if isinstance(self.rated_power, cvx.Variable):
+            max_discharging_range = np.inf
+        else:
+            max_discharging_range = self.discharge_capacity()
+        return max_discharging_range
+
+    def max_power_out(self):
+        """ Returns: the maximum power that can be outputted by this genset
+        """
+        power_out = self.n * self.rated_power
+        return power_out
 
     def get_capex(self):
         """ Returns the capex of a given technology
         """
         return self.capital_cost_function
-
