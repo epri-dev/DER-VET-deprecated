@@ -98,7 +98,10 @@ class CHP(CT):
         ul_mask = (site_thermal_load_ratio > self.max_steam_ratio)
         size_needed_to_meet_thermal_loads = np.where(ul_mask,
             # (where ul_mask is true)
-            self.electric_heat_ratio*(self.site_hotwater_load * self.max_steam_ratio + self.site_steam_load),
+            #   steam load is too large, so the system throws away hotwater.
+            #   thus the total thermal energy is steam load plus the amount of hotwater produced
+            #   as a result of steam generation
+            self.electric_heat_ratio*(self.site_steam_load / self.max_steam_ratio + self.site_steam_load),
             # (where ul_mask is false)
             self.electric_heat_ratio*(self.site_steam_load + self.site_hotwater_load)
         )
