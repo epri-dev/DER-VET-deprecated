@@ -49,9 +49,9 @@ class Chiller(DER, ContinuousSizing, DERExtension):
         self.tag = 'Chiller'
 
         # cop is the ratio of cooling provided to the power input
-        #   ( BTU/hr of cooling / BTU/hr of [electricity|natural_gas|heat] )
+        #   ( BTU/hr of cooling / BTU/hr of [electricity|natural gas|heat] )
         self.cop = params['coefficient_of_performance']
-        self.power_source = params['power_source']  # electricity, natural_gas, heat
+        self.power_source = params['power_source']  # electricity, natural gas, heat
 
         self.rated_power = KW_PER_TON * params['rated_capacity']  # tons/chiller
 
@@ -61,11 +61,21 @@ class Chiller(DER, ContinuousSizing, DERExtension):
 
         self.fixed_om = params['fixed_om_cost'] / KW_PER_TON  # $ / ton-year
 
-        self.n = params['n']  # number of chillers (integer)
-        self.fuel_type = params['fuel_type']
+        # since there is no min_power input for chillers, set the number of chillers to 1
+        self.n = 1 # number of chillers (integer)
+
+        # let the power_source input control the fuel_type
+        if self.power_source == 'natural gas':
+            self.fuel_type = 'gas'
+            self.is_fuel = True
+        else:
+            self.fuel_type = None
 
         self.is_cold = True
-        self.is_fuel = True
+
+        # For now, no, chiller just serves the cooling load and consumes some power to do so.
+        # Since the cooling load is fixed, the chiller has no opportunity to provide market services.
+        self.can_participate_in_market_services = False
 
         # time series inputs
         self.site_cooling_load = params.get('site_cooling_load')    # BTU/hr
@@ -97,17 +107,21 @@ class Chiller(DER, ContinuousSizing, DERExtension):
         constraint_list = super().constraints(mask)
         cold = self.variables_dict['cold']
 
-        if self.power_source == 'electricity':
-            # TODO -- add the additional electricl load
-            constraint_list += [cvx.Zero(cold / self.cop)]
+        # limit the cold power of the chiller to at most its rated power
+        constraint_list += [cvx.NonPos(cold - self.rated_power)]
 
-        elif self.power_source == 'natural_gas':
-            # TODO -- add the additional NG use
-            constraint_list += [cvx.Zero(cold / self.cop)]
-
-        elif self.power_source == 'heat':
-            # TODO -- add the additional heat load
-            constraint_list += [cvx.Zero(cold / self.cop)]
+        ## conditional constraints that depend on the power source of the chiller
+        #if self.power_source == 'electricity':
+        #    # TODO -- add the additional electricl load
+        #    constraint_list += [cvx.Zero(cold / self.cop)]
+        #
+        #elif self.power_source == 'natural gas':
+        #    # TODO -- add the additional NG use
+        #    constraint_list += [cvx.Zero(cold / self.cop)]
+        #
+        #elif self.power_source == 'heat':
+        #    # TODO -- add the additional heat load
+        #    constraint_list += [cvx.Zero(cold / self.cop)]
 
         constraint_list += self.size_constraints
         return constraint_list
@@ -133,7 +147,7 @@ class Chiller(DER, ContinuousSizing, DERExtension):
 
         if self.power_source == 'electricity':
             print('')
-        elif self.power_source == 'natural_gas':
+        elif self.power_source == 'natural gas':
             # add fuel cost in $/kWh
             fuel_exp = cvx.sum(total_out * self.cop * self.fuel_cost * self.dt * annuity_scalar)
             costs.update({self.name + ' fuel_cost': fuel_exp})

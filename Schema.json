@@ -2065,18 +2065,6 @@
                         "cba": "n",
                         "type": "string"
                     },
-                    "nsr_response_time": {
-                        "cba": "n",
-                        "min": "0",
-                        "type": "int",
-                        "unit": "minutes"
-                    },
-                    "sr_response_time": {
-                        "cba": "n",
-                        "min": "0",
-                        "type": "int",
-                        "unit": "minutes"
-                    },
                     "macrs_term": {
                         "allowed_values": "3|5|7|10|15|20|25|27.5|39",
                         "cba": "n",
@@ -2123,11 +2111,6 @@
                         "type": "float",
                         "unit": "tons/chiller"
                     },
-                    "fuel_type": {
-                        "cba": "y",
-                        "allowed_values": "liquid|gas|other",
-                        "type": "string"
-                    },
                     "ccost": {
                         "cba": "y",
                         "min": "0.0",
@@ -2139,12 +2122,6 @@
                         "min": "0.0",
                         "type": "float",
                         "unit": "$/ton-chiller"
-                    },
-                    "n": {
-                        "cba": "n",
-                        "min": "0",
-                        "type": "int",
-                        "unit": "chillers"
                     },
                     "construction_year": {
                         "cba": "n",

@@ -230,14 +230,14 @@ class MicrogridPOI(POI):
         if self.site_steam_load is not None:
             if steam_in.variables():
                 TellUser.debug('adding steam thermal power balance constraint')
-                constraint_list += [cvx.NonPos(-steam_in + self.site_steam_load)]
+                constraint_list += [cvx.NonPos(-1 * steam_in + self.site_steam_load)]
         if self.site_hotwater_load is not None:
             if hotwater_in.variables():
                 TellUser.debug('adding hot water thermal power balance constraint')
-                constraint_list += [cvx.NonPos(-hotwater_in + self.site_hotwater_load)]
+                constraint_list += [cvx.NonPos(-1 * hotwater_in + self.site_hotwater_load)]
         if self.site_cooling_load is not None:
             if cold_in.variables():
                 TellUser.debug('adding thermal cooling power balance constraint')
-                constraint_list += [cvx.NonPos(-cold_in + self.site_cooling_load)]
+                constraint_list += [cvx.NonPos(-1 * cold_in + self.site_cooling_load)]
 
         return obj_expression, constraint_list
