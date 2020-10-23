@@ -262,7 +262,7 @@ class Chiller(DER, ContinuousSizing, DERExtension):
 
         results[tech_id + ' Cold Generation (kW)'] = self.variables_df['cold']
         if self.site_cooling_load is not None:
-            results[tech_id + ' Site Cooling Thermal Load (BTU/hr)'] = self.site_cooling_load
+            results[tech_id + ' Site Cooling Thermal Load (kW)'] = self.site_cooling_load
 
     # def proforma_report(self, opt_years, results):
         # TODO -- fill this in

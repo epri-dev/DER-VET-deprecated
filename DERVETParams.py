@@ -20,6 +20,9 @@ from ErrorHandelling import *
 from pathlib import Path
 import json
 
+# TODO -- declare these constants in one place for access across DER-VET
+KW_PER_TON = 3.5168525  # unit conversion (1 ton in kW)
+KW_PER_MMBTU_HR = 293.1 # unit conversion (1 MMBtu/hr in kW)
 
 class ParamsDER(Params):
     """
@@ -34,7 +37,7 @@ class ParamsDER(Params):
     cba_input_error_raised = False
     cba_input_template = None
     # TODO add to this as needed --AE
-    dervet_only_der_list = ['CT', 'CHP', 'DieselGenset', 'EV']
+    dervet_only_der_list = ['CT', 'CHP', 'DieselGenset', 'EV', 'Chiller']
 
     @staticmethod
     def csv_to_json(csv_filename, ignore_cba_valuation=False):
@@ -568,16 +571,16 @@ class ParamsDER(Params):
                 # add time series, monthly data, and any scenario case parameters to CHP parameter dictionary
                 if self.Scenario['incl_thermal_load']:
                     try:
-                        chp_inputs.update({'site_steam_load': time_series.loc[:, 'Site Steam Thermal Load (BTU/hr)']})
+                        chp_inputs.update({'site_steam_load': KW_PER_MMBTU_HR * time_series.loc[:, 'Site Steam Thermal Load (MMBtu/hr)']})
                     except:
                         pass
                     try:
-                        chp_inputs.update({'site_hotwater_load': time_series.loc[:, 'Site Hot Water Thermal Load (BTU/hr)']})
+                        chp_inputs.update({'site_hotwater_load': KW_PER_MMBTU_HR * time_series.loc[:, 'Site Hot Water Thermal Load (MMBtu/hr)']})
                     except:
                         pass
                     if chp_inputs.get('site_steam_load') is None and chp_inputs.get('site_hotwater_load') is None:
                         # report error when thermal load has neither steam nor hotwater components
-                        self.record_input_error("CHP is missing a site heating load ('Site Steam Thermal Load (BTU/hr)' and/or 'Site Hot Water Thermal Load (BTU/hr)') from timeseries data input")
+                        self.record_input_error("CHP is missing a site heating load ('Site Steam Thermal Load (MMBtu/hr)' and/or 'Site Hot Water Thermal Load (MMBtu/hr)') from timeseries data input")
                     elif chp_inputs.get('site_steam_load') is None or chp_inputs.get('site_hotwater_load') is None:
                         # when only one thermal load exists (steam or hotwater), make the other one with zeroes and warn
                         if chp_inputs.get('site_steam_load') is None:
@@ -634,12 +637,12 @@ class ParamsDER(Params):
                 # add time series, monthly data, and any scenario case parameters to CHP parameter dictionary
                 if self.Scenario['incl_thermal_load']:
                     try:
-                        chiller_input.update({'site_cooling_load': time_series.loc[:, 'Site Cooling Thermal Load (BTU/hr)']})
+                        chiller_input.update({'site_cooling_load': KW_PER_TON * time_series.loc[:, 'Site Cooling Thermal Load (tons)']})
                     except:
                         pass
                     if chiller_input.get('site_cooling_load') is None:
                         # report error when thermal load does not have cooling load
-                        self.record_input_error("Chiller is missing a site cooling load ('Site Cooling Thermal Load (BTU/hr)') from timeseries data input")
+                        self.record_input_error("Chiller is missing a site cooling load ('Site Cooling Thermal Load (tons)') from timeseries data input")
 
         super().load_technology(names_list)
 

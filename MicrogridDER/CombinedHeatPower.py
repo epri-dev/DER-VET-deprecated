@@ -117,9 +117,9 @@ class CHP(CT):
         results[tech_id + ' Steam Generation (kW)'] = self.variables_df['steam']
         results[tech_id + ' Hot Water Generation (kW)'] = self.variables_df['hotwater']
         if self.site_steam_load is not None:
-            results[tech_id + ' Site Steam Thermal Load (BTU/hr)'] = self.site_steam_load
+            results[tech_id + ' Site Steam Thermal Load (kW)'] = self.site_steam_load
         if self.site_hotwater_load is not None:
-            results[tech_id + ' Site Hot Water Thermal Load (BTU/hr)'] = self.site_hotwater_load
+            results[tech_id + ' Site Hot Water Thermal Load (kW)'] = self.site_hotwater_load
 
         return results
 
