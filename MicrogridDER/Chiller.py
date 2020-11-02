@@ -49,7 +49,7 @@ class Chiller(DER, ContinuousSizing, DERExtension):
         self.tag = 'Chiller'
 
         # cop is the ratio of cooling provided to the power input
-        #   ( BTU/hr of cooling / BTU/hr of [electricity|natural gas|heat] )
+        #   ( Btu/hr of cooling / Btu/hr of [electricity|natural gas|heat] )
         self.cop = params['coefficient_of_performance']
         self.power_source = params['power_source']  # electricity, natural gas, heat
 
@@ -78,7 +78,7 @@ class Chiller(DER, ContinuousSizing, DERExtension):
         self.can_participate_in_market_services = False
 
         # time series inputs
-        self.site_cooling_load = params.get('site_cooling_load')    # BTU/hr
+        self.site_cooling_load = params.get('site_cooling_load')    # input as MMBtu/hr, but converted to kW in DERVETParams.py
 
         self.max_rated_power = KW_PER_TON * params['max_rated_capacity']  # tons/chiller
         self.min_rated_power = KW_PER_TON * params['min_rated_capacity'] # tons/chiller
@@ -92,8 +92,7 @@ class Chiller(DER, ContinuousSizing, DERExtension):
 
     def grow_drop_data(self, years, frequency, load_growth):
         if self.site_cooling_load is not None:
-            self.site_cooling_load = Lib.fill_extra_data(self.site_cooling_load, years, 0, frequency)
-            # TODO use a non-zero growth rate of cooling load? --AE
+            self.site_cooling_load = Lib.fill_extra_data(self.site_cooling_load, years, load_growth, frequency)
             self.site_cooling_load = Lib.drop_extra_data(self.site_cooling_load, years)
 
     def initialize_variables(self, size):
@@ -177,18 +176,6 @@ class Chiller(DER, ContinuousSizing, DERExtension):
         if ccost_kw is not None:
             self.capital_cost_function[1] = ccost_kw
 
-    def discharge_capacity(self, solution=False):
-        """ Returns: the maximum discharge that can be attained
-        """
-        if not solution or not self.being_sized():
-            return super().discharge_capacity()
-        else:
-            try:
-                rated_power = self.rated_power.value
-            except AttributeError:
-                rated_power = self.rated_power
-            return rated_power * self.n
-
     def name_plate_capacity(self, solution=False):
         """ Returns the value of 1 generator in a set of generators
 
@@ -241,12 +228,6 @@ class Chiller(DER, ContinuousSizing, DERExtension):
         else:
             max_discharging_range = self.discharge_capacity()
         return max_discharging_range
-
-    def max_power_out(self):
-        """ Returns: the maximum power that can be outputted by this genset
-        """
-        power_out = self.n * self.rated_power
-        return power_out
 
     def get_capex(self):
         """ Returns the capex of a given technology
