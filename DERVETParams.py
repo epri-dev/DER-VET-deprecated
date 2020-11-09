@@ -563,10 +563,11 @@ class ParamsDER(Params):
                 load_inputs.update({'dt': dt,
                                     'growth': self.Scenario['def_growth']})
         if len(self.CHP):
-            if not self.Scenario['incl_thermal_load']:
+            if self.Scenario['incl_thermal_load'] != 1:
                 TellUser.warning('with incl_thermal_load = 0, CHP will ignore any site thermal loads.')
             for id_str, chp_inputs in self.CHP.items():
-                chp_inputs.update({'dt': dt})
+                chp_inputs.update({'dt': dt,
+                                   'growth': self.Scenario['def_growth']})
 
                 # add time series, monthly data, and any scenario case parameters to CHP parameter dictionary
                 if self.Scenario['incl_thermal_load']:
@@ -628,7 +629,7 @@ class ParamsDER(Params):
                 except KeyError:
                     self.record_input_error(f"Missing 'EV fleet/{id_str}' from timeseries input. Please include EV load.")
 
-        if self.Chiller is not None:
+        if len(self.Chiller):
             if not self.Scenario['incl_thermal_load']:
                 TellUser.warning('with incl_thermal_load = 0, Chiller will ignore any site thermal loads.')
             for id_str, chiller_input in self.Chiller.items():
