@@ -116,6 +116,21 @@ class ESSSizing(EnergyStorage, DERExtension, ContinuousSizing):
                 TellUser.error(f'Ignoring discharge max time series because {self.tag}-{self.name} sizing for power capacity')
                 self.limit_discharge_max = None
 
+    def sizing_with_degradation(self, solution=False):
+        """
+
+        Returns: the maximum discharge that can be attained
+
+        """
+        if not solution:
+            return self.dis_max_rated
+        else:
+            try:
+                dis_max_rated = int(self.dis_max_rated.value)
+            except AttributeError:
+                dis_max_rated = self.dis_max_rated
+            return dis_max_rated
+
     def discharge_capacity(self, solution=False):
         """
 

@@ -95,6 +95,7 @@ class MicrogridScenario(Scenario):
         self.value_stream_input_map.update({'Reliability': input_tree.Reliability})
         self.deferral_sizing = False  # indicates that dervet should go to the deferral sizing module
         self.reliability_sizing = False  # indicates that dervet should go to the reliability sizing module
+        self.Battery_sizing_with_Degradation=False #indicates that dervet sizes ES considering battery degradation
         TellUser.debug("ScenarioSizing initialized ...")
 
     def set_up_poi_and_service_aggregator(self, point_of_interconnection_class=MicrogridPOI, service_aggregator_class=MicrogridServiceAggregator):
@@ -121,6 +122,11 @@ class MicrogridScenario(Scenario):
                 if self.service_agg.value_streams['Reliability'].outage_duration==1 and self.dt==1:
                     TellUser.error("Reliability target must be more than 1 hour in this implementation")
                     raise ParameterError('See dervet.log for more information.')
+
+            if self.poi.der_list[0].technology_type == "Energy Storage System" and self.poi.der_list[0].incl_cycle_degrade:
+                self.Battery_sizing_with_Degradation = True
+
+                TellUser.warning(f"Batter sizing with Degradation option. Degradation is calculated as a post-facto in this case")
             else:
                 self.check_opt_sizing_conditions()
 
@@ -254,6 +260,8 @@ class MicrogridScenario(Scenario):
             return
 
         TellUser.info("Starting optimization loop")
+        if self.Battery_sizing_with_Degradation:
+            self.poi.der_list[0].incl_cycle_degrade = 1
         for opt_period in self.optimization_levels.predictive.unique():
 
             # setup + run optimization then return optimal objective costs
@@ -264,6 +272,9 @@ class MicrogridScenario(Scenario):
                 TellUser.info(f"Optimization window #{opt_period} does not have any constraints or objectives to minimize -- SKIPPING...")
                 continue
             cvx_problem, obj_expressions, cvx_error_msg = self.solve_optimization(functions, constraints)
+            #Setting the flag back to calculate degradation
+            if self.Battery_sizing_with_Degradation:
+                self.poi.der_list[0].incl_cycle_degrade = 0
             self.save_optimization_results(opt_period, sub_index, cvx_problem, obj_expressions, cvx_error_msg)
 
     def set_up_optimization(self, opt_window_num, annuity_scalar=1, ignore_der_costs=False):

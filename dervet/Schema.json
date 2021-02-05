@@ -1972,12 +1972,6 @@
                         "allowed_values": "1|0",
                         "unit": "yes/no"
                     },
-                    "replacement_construction_time": {
-                        "cba": "n",
-                        "min": "1",
-                        "type": "int",
-                        "unit": "year"
-                    },
                     "salvage_value": {
                         "cba": "n",
                         "allowed_values": "sunk cost|linear salvage value|BOUND",
