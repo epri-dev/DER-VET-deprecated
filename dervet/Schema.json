@@ -15,13 +15,13 @@
                         "type": "float",
                         "unit": "$"
                     },
-                    "ccost_kw": {
+                    "ccost_kW": {
                         "cba": "y",
                         "min": "0.0",
                         "type": "float",
                         "unit": "$/kW"
                     },
-                    "ccost_kwh": {
+                    "ccost_kWh": {
                         "cba": "y",
                         "min": "0.0",
                         "type": "float",
@@ -362,12 +362,12 @@
                         "type": "float",
                         "unit": "$"
                     },
-                    "ccost_kw": {
+                    "ccost_kW": {
                         "min": "0.0",
                         "type": "float",
                         "unit": "$/kW"
                     },
-                    "ccost_kwh": {
+                    "ccost_kWh": {
                         "min": "0.0",
                         "type": "float",
                         "unit": "$"
@@ -1045,7 +1045,7 @@
                         "cba": "n",
                         "min": "0.0",
                         "type": "float",
-                        "unit": "gal/kWh"
+                        "unit": "MMBtu/MWh"
                     },
                     "expected_lifetime": {
                         "cba": "n",
@@ -1058,11 +1058,10 @@
                         "type": "float",
                         "unit": "$/year"
                     },
-                    "fuel_cost": {
+                    "fuel_type": {
                         "cba": "y",
-                        "min": "0.0",
-                        "type": "float",
-                        "unit": "$/gal"
+                        "allowed_values": "liquid|gas|other",
+                        "type": "string"
                     },
                     "macrs_term": {
                         "allowed_values": "3|5|7|10|15|20|25|27.5|39",
@@ -1499,6 +1498,24 @@
                         "type": "float",
                         "unit": "%"
                     },
+                    "fuel_price_liquid": {
+                        "cba": "y",
+                        "type": "float",
+                        "min": "0.0",
+                        "unit": "$/MMBtu"
+                    },
+                    "fuel_price_gas": {
+                        "cba": "y",
+                        "type": "float",
+                        "min": "0.0",
+                        "unit": "$/MMBtu"
+                    },
+                    "fuel_price_other": {
+                        "cba": "y",
+                        "type": "float",
+                        "min": "0.0",
+                        "unit": "$/MMBtu"
+                    },
                     "inflation_rate": {
                         "cba": "n",
                         "max": "100.0",
@@ -1630,7 +1647,7 @@
                         "cba": "n",
                         "min": "0.0",
                         "type": "float",
-                        "unit": "gal/kWh"
+                        "unit": "MMBtu/MWh"
                     },
                     "expected_lifetime": {
                         "cba": "n",
@@ -1643,11 +1660,10 @@
                         "type": "float",
                         "unit": "$/year"
                     },
-                    "fuel_cost": {
+                    "fuel_type": {
                         "cba": "y",
-                        "min": "0.0",
-                        "type": "float",
-                        "unit": "$/gal"
+                        "allowed_values": "liquid|gas|other",
+                        "type": "string"
                     },
                     "macrs_term": {
                         "allowed_values": "3|5|7|10|15|20|25|27.5|39",

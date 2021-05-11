@@ -230,9 +230,9 @@ class IntermittentResourceSizing(PVSystem.PV, DERExtension, ContinuousSizing):
 
         """
         super().update_for_evaluation(input_dict)
-        cost_per_kw = input_dict.get('ccost_kW')
-        if cost_per_kw is not None:
-            self.capital_cost_function = cost_per_kw
+        cost_per_kW = input_dict.get('ccost_kW')
+        if cost_per_kW is not None:
+            self.capital_cost_function = cost_per_kW
 
     def sizing_error(self):
         """

@@ -187,9 +187,9 @@ class RotatingGeneratorSizing(RotatingGenerator, DERExtension, ContinuousSizing)
         if variable_cost is not None:
             self.fixed_om = fixed_om_cost
 
-        ccost_kw = input_dict.get('ccost_kW')
-        if ccost_kw is not None:
-            self.capital_cost_function[1] = ccost_kw
+        ccost_kW = input_dict.get('ccost_kW')
+        if ccost_kW is not None:
+            self.capital_cost_function[1] = ccost_kW
 
     def sizing_error(self):
         """
