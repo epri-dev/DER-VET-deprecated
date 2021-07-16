@@ -286,7 +286,7 @@ class IntermittentResourceSizing(PVSystem.PV, DERExtension, ContinuousSizing):
             # fill forward
             pro_forma = fill_forward_func(pro_forma, self.ppa_inflation)
             # apply PPA inflation rate
-            pro_forma = apply_inflation_rate_func(pro_forma, self.ppa_inflation, min(analysis_years))
+            # pro_forma = apply_inflation_rate_func(pro_forma, self.ppa_inflation, min(analysis_years))
         else:
             pro_forma = super().proforma_report(apply_inflation_rate_func, fill_forward_func,
                                                 results)

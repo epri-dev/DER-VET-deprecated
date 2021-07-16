@@ -342,7 +342,7 @@ class ElectricVehicle1(DER, ContinuousSizing, DERExtension):
         # fill forward
         om_costs = fill_forward_func(om_costs, None)
         # apply inflation rates
-        om_costs = apply_inflation_rate_func(om_costs, None, min(analysis_years))
+        # om_costs = apply_inflation_rate_func(om_costs, None, min(analysis_years))
         # append will super class's proforma
         pro_forma = pd.concat([pro_forma, om_costs], axis=1)
         return pro_forma
