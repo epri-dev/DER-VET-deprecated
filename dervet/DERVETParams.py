@@ -146,13 +146,13 @@ class ParamsDER(Params):
         """ Based on what the user has indicated as active (and what the user has not), predict whether or not
         the simulation(s) will have trouble solving.
 
-        Returns (bool): True if there is no errors found. False if there is errors found in the errors log.
+        Returns (bool): True if there are errors found. False if there are no errors found in the errors log.
 
         """
         slf = cls.template
-        # TODO: add EVs and other technologies here? -AE
-        other_ders = any([len(slf.CHP), len(slf.CT), len(slf.DieselGenset)])
-        super().bad_active_combo(dervet=True, other_ders=other_ders)
+        other_ders = any([len(slf.CHP), len(slf.CT), len(slf.DieselGenset),
+            len(slf.ElectricVehicle1), len(slf.ElectricVehicle2)])
+        return super().bad_active_combo(dervet=True, other_ders=other_ders)
 
     @classmethod
     def cba_template_struct(cls):
@@ -515,10 +515,14 @@ class ParamsDER(Params):
         """ Interprets user given data and prepares it for each technology.
 
         """
-
         time_series = self.Scenario['time_series']
         dt = self.Scenario['dt']
         binary = self.Scenario['binary']
+
+        if names_list is None:
+            # then no name_lst was inherited so initialize as list type
+            names_list = []
+
         for id_str, pv_inputs in self.PV.items():
             if not pv_inputs['rated_capacity']:
                 if pv_inputs['min_rated_capacity'] > pv_inputs['max_rated_capacity']:

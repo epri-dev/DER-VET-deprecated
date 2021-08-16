@@ -2224,8 +2224,8 @@
                     "n": {
                         "allowed_values": "month|year|BOUND",
                         "cba": "n",
-                        "max": "366",
-                        "min": "0",
+                        "max": "8784",
+                        "min": "2",
                         "type": "string/int",
                         "unit": "hours"
                     },

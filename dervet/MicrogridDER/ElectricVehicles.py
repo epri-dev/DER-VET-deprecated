@@ -554,6 +554,7 @@ class ElectricVehicle2(DER, ContinuousSizing, DERExtension):
         results = pd.DataFrame(index=self.variables_df.index)
         solve_dispatch_opt = self.variables_df.get('ch')
         if solve_dispatch_opt is not None:
+            results[tech_id + ' EV Fleet Baseline Load'] = self.EV_load_TS
             results[tech_id + ' Charge (kW)'] = self.variables_df['ch']
             results[tech_id + ' Power (kW)'] = -self.variables_df['ch']
 

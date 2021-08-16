@@ -794,7 +794,8 @@ class Reliability(ValueStream):
         df_dict['load_coverage_prob'] = self.load_coverage_probability(
             der_list, time_series_data, technology_summary)
         TellUser.info('Finished load coverage calculation.')
-        df_dict['lcp_outage_soe_profiles'] = self.outage_soe_profile
+        if 'Energy Storage System' in technology_summary['Type'].values:
+            df_dict['lcp_outage_soe_profiles'] = self.outage_soe_profile
         # calculate potential energy contribution from each DER in every outage
         if not self.post_facto_only:
             self.contribution_summary(technology_summary, time_series_data)
@@ -890,12 +891,16 @@ class Reliability(ValueStream):
 
         """
         start = time.time()
-
+        if 'Energy Storage System' in technology_summary_df['Type'].values:
+            no_storage_case=False
+        else:
+            no_storage_case=True
         # 1) collect information required to call simulate_outage
+
         aggregate_soe = None
         dg_gen, total_pv_max, der_props, total_pv_vari, largest_gamma = \
             self.get_der_mix_properties(der_list)
-        if 'Energy Storage System' in technology_summary_df['Type'].values:
+        if no_storage_case==False:
             # save the state of charge
             if self.use_user_const:
                 aggregate_soe = results_df.loc[:, 'Aggregate Energy Min (kWh)']
@@ -917,31 +922,44 @@ class Reliability(ValueStream):
         outage_init = 0
         self.outage_soe_profile = {hour+1: [] for hour in range(outage_len)}
         while outage_init < (len(self.critical_load)):
-            if aggregate_soe is not None:
-                der_props['init_soe'] = aggregate_soe[outage_init]
+            if no_storage_case==False:
+                if aggregate_soe is not None:
+                    der_props['init_soe'] = aggregate_soe[outage_init]
             demand_left, reliability_check, energy_requirement_check = \
                 self.data_process(outage_init, dg_gen,
                                   total_pv_max, der_props,
                                   total_pv_vari, largest_gamma)
+            if no_storage_case==True:
+                # In case energy storage is not present, no outage simulation is required
+                #Is there a failure
+                if any(reliability_check>0)==True:
+                    failure_ind=np.where((reliability_check>0)==True)[0]
+                    coverage_length=failure_ind[0]
+                else:
+                    coverage_length=len(reliability_check)
+                # record value of foo in frequency count
+                frequency_simulate_outage[int(coverage_length)] += 1
 
-            outage_soc_profile = self.simulate_outage(reliability_check,
-                                                      demand_left,
-                                                      energy_requirement_check,
-                                                      outage_len,
-                                                      **der_props)
+            else:
+                #Outage simulation in the presence of energy storage
+                outage_soc_profile = self.simulate_outage(reliability_check,
+                                                          demand_left,
+                                                          energy_requirement_check,
+                                                          outage_len,
+                                                          **der_props)
 
-            # record value of foo in frequency count
-            coverage_length = len(outage_soc_profile)
-            for key, value in self.outage_soe_profile.items():
-                value.append(outage_soc_profile[key-1] if key-1 < coverage_length else 0)
+                # record value of foo in frequency count
+                coverage_length = len(outage_soc_profile)
+                for key, value in self.outage_soe_profile.items():
+                    value.append(outage_soc_profile[key-1] if key-1 < coverage_length else 0)
 
-            frequency_simulate_outage[int(coverage_length)] += 1
+                frequency_simulate_outage[int(coverage_length)] += 1
             # start outage on next timestep
             outage_init += 1
-
-        self.outage_soe_profile = pd.DataFrame(self.outage_soe_profile,
-                                               index=self.critical_load.index)
-        self.outage_soe_profile.fillna(0, inplace=True)
+        if no_storage_case==False:
+            self.outage_soe_profile = pd.DataFrame(self.outage_soe_profile,
+                                                   index=self.critical_load.index)
+            self.outage_soe_profile.fillna(0, inplace=True)
         # 3) calculate probabilities
         load_coverage_prob = []
         length = self.dt

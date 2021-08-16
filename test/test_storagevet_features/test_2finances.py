@@ -37,6 +37,7 @@ from test.TestingLib import run_case
 from storagevet.ErrorHandling import *
 import pandas as pd
 import numpy as np
+import numpy.testing as npt
 
 DIR = Path("./test/test_storagevet_features/model_params")
 
@@ -99,26 +100,29 @@ class TestProformaWithNoDegradation:
                                                'BATTERY: es Variable O&M Cost'].values
         deflated_cost = variable_om / self.inflation_rate
         compare_cost_to_base_year_value = list(deflated_cost / deflated_cost[0])
-        # the years including and in between opt_years should be the same as base
-        assert compare_cost_to_base_year_value[:2022-2017-1] == list(np.ones(2022-2017-1))
-        # years after last opt_year should be same as inflation rate
-        after_opt_yr_vals = compare_cost_to_base_year_value[2022-2017:]
-        expected_inflation_after_max_opt_yr = [1.03**year for year in range(len(after_opt_yr_vals))]
-        assert np.all(np.around(after_opt_yr_vals, decimals=5) == np.around(
-            expected_inflation_after_max_opt_yr, decimals=5))
+        # the years including, in between, and after opt_years should be the same as base
+        for i in range(len(variable_om)):
+            npt.assert_approx_equal(compare_cost_to_base_year_value[i], 1, significant=15)
+        ## years after last opt_year should be same as inflation rate
+        #after_opt_yr_vals = compare_cost_to_base_year_value[2022-2017:]
+        #expected_inflation_after_max_opt_yr = [1.03**year for year in range(len(after_opt_yr_vals))]
+        #assert np.all(np.around(after_opt_yr_vals, decimals=5) == np.around(
+        #    expected_inflation_after_max_opt_yr, decimals=5))
 
     def test_fixed_om_values_reflect_inflation_rate(self):
         fixed_om = self.actual_proforma.loc[self.actual_proforma.index != 'CAPEX Year',
                                             'BATTERY: es Fixed O&M Cost'].values
         deflated_cost = fixed_om / self.inflation_rate
         compare_cost_to_base_year_value = list(deflated_cost / deflated_cost[0])
-        # the years including and in between opt_years should be the same as base
-        assert compare_cost_to_base_year_value[:2022 - 2017 - 1] == list(np.ones(2022 - 2017 - 1))
-        # years after last opt_year should be same as inflation rate
-        after_opt_yr_vals = compare_cost_to_base_year_value[2022 - 2017:]
-        expected_inflation_after_max_opt_yr = [1.03 ** year for year in range(len(after_opt_yr_vals))]
-        assert np.all(np.around(after_opt_yr_vals, decimals=5) == np.around(
-            expected_inflation_after_max_opt_yr, decimals=5))
+        # the years including, in between, and after opt_years should be the same as base
+        #for i in range(2022-2017+1):
+        for i in range(len(fixed_om)):
+            npt.assert_approx_equal(compare_cost_to_base_year_value[i], 1, significant=15)
+        ## years after last opt_year should be same as inflation rate
+        #after_opt_yr_vals = compare_cost_to_base_year_value[2022 - 2017:]
+        #expected_inflation_after_max_opt_yr = [1.03 ** year for year in range(len(after_opt_yr_vals))]
+        #assert np.all(np.around(after_opt_yr_vals, decimals=5) == np.around(
+        #    expected_inflation_after_max_opt_yr, decimals=5))
 
 
 class TestProformaWithNoDegradationNegRetailGrowth:

@@ -80,6 +80,12 @@ def assert_ran_with_services(model_param_location: str, services: list):
     assert set(services) == set(value_stream_keys)
 
 
+def assert_usecase_considered_services(results, services: list):
+    value_stream_keys = results.instances[0].service_agg.value_streams.keys()
+    print(set(value_stream_keys))
+    assert set(services) == set(value_stream_keys)
+
+
 def compare_proforma_results(results, frozen_proforma_location: str, error_bound: float,
                              opt_years=None):
     assert_file_exists(results, 'pro_forma')

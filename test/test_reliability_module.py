@@ -34,8 +34,10 @@ NOTE there are reliability module tests in test_beta_release_validation_report. 
 features that were not showcased through the validation report
 
 """
+import pytest
 from pathlib import Path
 from test.TestingLib import *
+from storagevet.ErrorHandling import *
 
 RESULTS = Path("./test/test_load_shedding/results")
 SIZING_RESULTS = Path("./test/test_load_shedding/results/Sizing")
@@ -129,3 +131,12 @@ class TestSizingWoLoadShedding:
 
 def test_post_facto_calculations_with_user_constraints():
     assert_ran(MP / f"Model_Parameters_Template_issue162{CSV}")
+
+
+def test_battery_sizing4reliability_soc_init_small():
+    with pytest.raises(ParameterError):
+        assert_ran(MP / f"EV_Battery_Sizing_MP{CSV}")
+
+
+def test_post_facto_dg_only():
+    assert_ran(MP / f"Reliability_DG{CSV}")

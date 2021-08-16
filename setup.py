@@ -44,7 +44,7 @@ HERE = pathlib.Path(__file__).parent
 README = (HERE / "README.md").read_text()
 
 setup(name='dervet',
-      version='1.0.0',
+      version='1.1.1',
       description='',
       url='der-vet.com',
       long_description=README,

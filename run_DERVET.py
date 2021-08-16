@@ -44,7 +44,7 @@ if __name__ == '__main__':
                                                  'analysis, dispatch, modelling, optimization, and valuation tool' +
                                                  '. Should be used with Python 3.6.x, pandas 0.19+.x, and CVXPY' +
                                                  ' 0.4.x or 1.0.x.',
-                                     epilog='Copyright 2018. Electric Power Research Institute (EPRI). ' +
+                                     epilog='Copyright 2021. Electric Power Research Institute (EPRI). ' +
                                             'All Rights Reserved.')
     parser.add_argument('parameters_filename', type=str,
                         help='specify the filename of the CSV file defining the PARAMETERS dataframe')
