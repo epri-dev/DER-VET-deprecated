@@ -145,6 +145,33 @@
                         },
                         "type": "float"
                     },
+                    "fuel_price_gas": {
+                        "opt_value": "3",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "None",
+                            "value": "nan"
+                        },
+                        "type": "float"
+                    },
+                    "fuel_price_liquid": {
+                        "opt_value": "25",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "None",
+                            "value": "nan"
+                        },
+                        "type": "float"
+                    },
+                    "fuel_price_other": {
+                        "opt_value": "15",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "None",
+                            "value": "nan"
+                        },
+                        "type": "float"
+                    },
                     "inflation_rate": {
                         "opt_value": "3",
                         "sensitivity": {
@@ -252,7 +279,7 @@
                         "type": "float"
                     },
                     "efficiency": {
-                        "opt_value": "0.15",
+                        "opt_value": "19",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -278,14 +305,14 @@
                         },
                         "type": "float"
                     },
-                    "fuel_cost": {
-                        "opt_value": "3.5",
+                    "fuel_type": {
+                        "opt_value": "liquid",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
                             "value": "nan"
                         },
-                        "type": "float"
+                        "type": "string"
                     },
                     "macrs_term": {
                         "opt_value": "3",

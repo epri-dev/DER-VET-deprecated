@@ -46,7 +46,7 @@
                         },
                         "type": "float"
                     },
-                    "ccost_kw": {
+                    "ccost_kW": {
                         "evaluation": {
                             "active": "n",
                             "value": "100"
@@ -59,7 +59,7 @@
                         },
                         "type": "float"
                     },
-                    "ccost_kwh": {
+                    "ccost_kWh": {
                         "evaluation": {
                             "active": "n",
                             "value": "800"
@@ -732,6 +732,33 @@
                         },
                         "type": "float"
                     },
+                    "fuel_price_gas": {
+                        "opt_value": "3",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "None",
+                            "value": "nan"
+                        },
+                        "type": "float"
+                    },
+                    "fuel_price_liquid": {
+                        "opt_value": "25",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "None",
+                            "value": "nan"
+                        },
+                        "type": "float"
+                    },
+                    "fuel_price_other": {
+                        "opt_value": "15",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "None",
+                            "value": "nan"
+                        },
+                        "type": "float"
+                    },
                     "inflation_rate": {
                         "evaluation": {
                             "active": "n",
@@ -850,7 +877,7 @@
                         "type": "float"
                     },
                     "efficiency": {
-                        "opt_value": "0.086618705",
+                        "opt_value": "19",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -880,18 +907,18 @@
                         },
                         "type": "float"
                     },
-                    "fuel_cost": {
+                    "fuel_type": {
                         "evaluation": {
                             "active": "n",
                             "value": "3.5"
                         },
-                        "opt_value": "2.97",
+                        "opt_value": "liquid",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
                             "value": "nan"
                         },
-                        "type": "float"
+                        "type": "string"
                     },
                     "macrs_term": {
                         "evaluation": {

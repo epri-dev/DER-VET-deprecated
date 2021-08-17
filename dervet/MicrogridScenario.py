@@ -137,6 +137,11 @@ class MicrogridScenario(Scenario):
         der_lst = self.poi.der_list
         self.cost_benefit_analysis = CostBenefitAnalysis(self.finance_inputs, self.start_year,
                                                          self.end_year)
+
+        # add fuel_cost to active DERs that can consume fuel
+        for der in der_lst:
+            der.set_fuel_cost(self.cost_benefit_analysis.get_fuel_cost)
+
         # set the project end year
         self.end_year = self.cost_benefit_analysis.find_end_year(der_lst)
         if self.end_year.year == 0:

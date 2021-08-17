@@ -74,6 +74,33 @@
                         },
                         "type": "float"
                     },
+                    "fuel_price_gas": {
+                        "opt_value": "3",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "None",
+                            "value": "nan"
+                        },
+                        "type": "float"
+                    },
+                    "fuel_price_liquid": {
+                        "opt_value": "25",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "None",
+                            "value": "nan"
+                        },
+                        "type": "float"
+                    },
+                    "fuel_price_other": {
+                        "opt_value": "15",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "None",
+                            "value": "nan"
+                        },
+                        "type": "float"
+                    },
                     "inflation_rate": {
                         "evaluation": {
                             "active": "n",
@@ -201,7 +228,7 @@
                         "type": "float"
                     },
                     "efficiency": {
-                        "opt_value": "0.15",
+                        "opt_value": "19",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -231,18 +258,18 @@
                         },
                         "type": "float"
                     },
-                    "fuel_cost": {
+                    "fuel_type": {
                         "evaluation": {
                             "active": "n",
                             "value": "3.5"
                         },
-                        "opt_value": "1",
+                        "opt_value": "liquid",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
                             "value": "nan"
                         },
-                        "type": "float"
+                        "type": "string"
                     },
                     "macrs_term": {
                         "evaluation": {
