@@ -84,7 +84,7 @@
                         "type": "float"
                     },
                     "fuel_price_liquid": {
-                        "opt_value": "25",
+                        "opt_value": "7.2098",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -228,7 +228,7 @@
                         "type": "float"
                     },
                     "efficiency": {
-                        "opt_value": "19",
+                        "opt_value": "20.805",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -237,7 +237,7 @@
                         "type": "float"
                     },
                     "expected_lifetime": {
-                        "opt_value": "13",
+                        "opt_value": "23",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -577,7 +577,7 @@
                         "type": "float"
                     },
                     "expected_lifetime": {
-                        "opt_value": "13",
+                        "opt_value": "23",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -1008,7 +1008,7 @@
                             "active": "n",
                             "value": "2017"
                         },
-                        "opt_value": "2017",
+                        "opt_value": "2021",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",

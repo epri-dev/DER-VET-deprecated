@@ -88,8 +88,8 @@ class TestEvaluateBatteryICECostsToZero:
         assert np.all(fixed_om == 0)
 
     def test_ice_fuel(self):
-        # fixed OM costs are 0
-        fuel = self.actual_proforma.loc[:, 'ICE: ice gen Diesel Fuel Costs'].values
+        # fuel costs are 0
+        fuel = self.actual_proforma.loc[:, 'ICE: ice gen Fuel Costs'].values
         assert np.all(fuel == 0)
 
 
