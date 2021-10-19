@@ -271,7 +271,10 @@ class CostBenefitAnalysis(Financial):
             der_tag = der_inst.tag
             der_id = der_inst.id
             evaluation_inputs = self.ders_values.get(der_tag, {}).get(der_id)
-            if evaluation_inputs is not None:
+            if der_inst.is_fuel:
+                # merge in possible fuel price evaluation
+                evaluation_inputs.update(self.Finance)
+            if evaluation_inputs:
                 der_inst.update_for_evaluation(evaluation_inputs)
 
     @staticmethod

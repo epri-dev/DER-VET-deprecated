@@ -168,13 +168,13 @@
                         "type": "Period"
                     },
                     "p_start_ch": {
-                        "cba": "n",
+                        "cba": "y",
                         "min": "0",
                         "type": "float",
                         "unit": "$"
                     },
                     "p_start_dis": {
-                        "cba": "n",
+                        "cba": "y",
                         "min": "0",
                         "type": "float",
                         "unit": "$"
@@ -437,11 +437,13 @@
                         "unit": "%"
                     },
                     "p_start_ch": {
+                        "cba": "y",
                         "min": "0",
                         "type": "float",
                         "unit": "$"
                     },
                     "p_start_dis": {
+                        "cba": "y",
                         "min": "0",
                         "type": "float",
                         "unit": "$"
@@ -1059,7 +1061,7 @@
                         "unit": "$/year"
                     },
                     "fuel_type": {
-                        "cba": "y",
+                        "cba": "n",
                         "allowed_values": "liquid|gas|other",
                         "type": "string"
                     },
@@ -1661,7 +1663,7 @@
                         "unit": "$/year"
                     },
                     "fuel_type": {
-                        "cba": "y",
+                        "cba": "n",
                         "allowed_values": "liquid|gas|other",
                         "type": "string"
                     },

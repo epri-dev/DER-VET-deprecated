@@ -174,6 +174,8 @@ class ParamsDER(Params):
             'PV': cls.read_and_validate_evaluation('PV'),  # cost_per_kW (and then recalculate capex)
             'ICE': cls.read_and_validate_evaluation('ICE'),  # fuel_price,
             'DieselGenset': cls.read_and_validate_evaluation('DieselGenset'),  # fuel_price,
+            'ElectricVehicle1': cls.read_and_validate_evaluation('ElectricVehicle1'),
+            'ElectricVehicle2': cls.read_and_validate_evaluation('ElectricVehicle2'),
             # 'ControllableLoad': cls.read_and_validate_evaluation('ControllableLoad')
         }
 

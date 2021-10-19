@@ -384,7 +384,7 @@ class ESSSizing(EnergyStorage, DERExtension, ContinuousSizing):
 
         variable_om = input_dict.get('OMexpenses')
         if variable_om is not None:
-            self.variable_om = variable_om * 100
+            self.variable_om = variable_om * 1e-3
 
         if self.incl_startup:
             p_start_ch = input_dict.get('p_start_ch')
