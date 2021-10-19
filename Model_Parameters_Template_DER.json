@@ -296,6 +296,10 @@
                         "type": "Period"
                     },
                     "p_start_ch": {
+                        "evaluation": {
+                            "active": "n",
+                            "value": "0"
+                        },
                         "opt_value": "0",
                         "sensitivity": {
                             "active": "no",
@@ -305,6 +309,10 @@
                         "type": "float"
                     },
                     "p_start_dis": {
+                        "evaluation": {
+                            "active": "n",
+                            "value": "0"
+                        },
                         "opt_value": "0",
                         "sensitivity": {
                             "active": "no",
@@ -2036,6 +2044,10 @@
                         "type": "float"
                     },
                     "fuel_price_gas": {
+                        "evaluation": {
+                            "active": "n",
+                            "value": "0"
+                        },
                         "opt_value": "3",
                         "sensitivity": {
                             "active": "no",
@@ -2045,6 +2057,10 @@
                         "type": "float"
                     },
                     "fuel_price_liquid": {
+                        "evaluation": {
+                            "active": "n",
+                            "value": "0"
+                        },
                         "opt_value": "25",
                         "sensitivity": {
                             "active": "no",
@@ -2054,6 +2070,10 @@
                         "type": "float"
                     },
                     "fuel_price_other": {
+                        "evaluation": {
+                            "active": "n",
+                            "value": "0"
+                        },
                         "opt_value": "15",
                         "sensitivity": {
                             "active": "no",
@@ -2220,10 +2240,6 @@
                         "type": "float"
                     },
                     "fuel_type": {
-                        "evaluation": {
-                            "active": "n",
-                            "value": "3.5"
-                        },
                         "opt_value": "liquid",
                         "sensitivity": {
                             "active": "no",
