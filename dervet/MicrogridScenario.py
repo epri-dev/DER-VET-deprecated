@@ -297,10 +297,6 @@ class MicrogridScenario(Scenario):
             **kwargs: allows child classes to pass in additional arguments to set_up_optimization
 
         """
-        # calculate and check that system requirement set by value streams can be met
-        self.system_requirements = self.service_agg.identify_system_requirements(self.poi.der_list,
-                                                                                 self.opt_years,
-                                                                                 self.frequency)
         alpha = 1
         if self.poi.is_sizing_optimization:
             # calculate the annuity scalar that will convert any yearly costs into a present value
