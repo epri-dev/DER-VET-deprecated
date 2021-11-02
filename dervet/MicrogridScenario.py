@@ -40,6 +40,7 @@ from dervet.MicrogridDER.PV import PV
 from dervet.MicrogridDER.ICE import ICE
 from dervet.MicrogridDER.DieselGenset import DieselGenset
 from dervet.MicrogridDER.CombustionTurbine import CT
+from dervet.MicrogridDER.Chiller import Chiller
 from dervet.MicrogridDER.CombinedHeatPower import CHP
 from dervet.MicrogridDER.LoadControllable import ControllableLoad
 from dervet.MicrogridDER.ElectricVehicles import ElectricVehicle1, ElectricVehicle2
@@ -74,6 +75,7 @@ class MicrogridScenario(Scenario):
         'PV': PV,
         'ICE': ICE,
         'DieselGenset': DieselGenset,
+        'Chiller': Chiller,
         'CT': CT,
         'CHP': CHP,
         'Load': ControllableLoad,
@@ -111,6 +113,7 @@ class MicrogridScenario(Scenario):
             'ElectricVehicle1': input_tree.ElectricVehicle1,
             'ElectricVehicle2': input_tree.ElectricVehicle2,
             'DieselGenset': input_tree.DieselGenset,
+            'Chiller': input_tree.Chiller,
             'CT': input_tree.CT,
             'CHP': input_tree.CHP,
         })

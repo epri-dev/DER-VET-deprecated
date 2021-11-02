@@ -717,7 +717,7 @@
                             "active": "nan",
                             "value": "nan"
                         },
-                        "opt_value": "4000",
+                        "opt_value": "4",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -991,7 +991,7 @@
                         "type": "float"
                     },
                     "heat_rate": {
-                        "opt_value": "1",
+                        "opt_value": "4",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",

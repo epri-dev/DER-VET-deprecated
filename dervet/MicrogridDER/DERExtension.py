@@ -48,10 +48,12 @@ class DERExtension:
         """
 
         """
+        TellUser.debug(f"Initializing {__name__}")
         # try to look for DERVET specific user inputs that are shared by all DERs
-        self.nsr_response_time = params['nsr_response_time']
-        self.sr_response_time = params['sr_response_time']
         self.startup_time = params['startup_time']  # startup time, default value of 0, units in minutes
+        # tech that do not participate in market services may not require these parameters
+        self.nsr_response_time = params.get('nsr_response_time', 0) # Chiller does not have this
+        self.sr_response_time = params.get('sr_response_time', 0)
 
         # CBA terms shared by all DERs
         self.macrs = params.get('macrs_term')

@@ -78,23 +78,3 @@ class CAES(CAESTech.CAES, ESSSizing):
         costs = super().objective_function(mask, annuity_scalar)
         if self.being_sized():
             costs.update({self.name + 'capex': self.get_capex()})
-
-    def update_price_signals(self, id_str, monthly_data=None, time_series_data=None):
-        """ Updates attributes related to price signals with new price signals that are saved in
-        the arguments of the method. Only updates the price signals that exist, and does not require all
-        price signals needed for this service.
-
-        Args:
-            monthly_data (DataFrame): monthly data after pre-processing
-            time_series_data (DataFrame): time series data after pre-processing
-
-        """
-        if monthly_data is not None:
-            freq = self.fuel_price.freq
-            try:
-                self.fuel_price = ParamsDER.monthly_to_timeseries(freq, monthly_data.loc[:, [f"Natural Gas Price ($/MillionBTU)/{id_str}"]])
-            except KeyError:
-                try:
-                    self.fuel_price = ParamsDER.monthly_to_timeseries(freq, monthly_data.loc[:, [f"Natural Gas Price ($/MillionBTU)"]])
-                except KeyError:
-                    pass

@@ -61,17 +61,24 @@ class CHP(CT):
         self.electric_heat_ratio = params['electric_heat_ratio']    # elec/heat (generation)
         self.max_steam_ratio = params['max_steam_ratio']           # steam/hotwater relative ratio
         # time series inputs
-        self.site_steam_load = params.get('site_steam_load')    # BTU/hr
-        self.site_hotwater_load = params.get('site_hotwater_load')    # BTU/hr
+        self.site_steam_load = params.get('site_steam_load')    # input as MMBtu/hr, but converted to kW in DERVETParams.py
+        self.site_hotwater_load = params.get('site_hotwater_load')   # input as MMBtu/hr, but converted to kW in DERVETParams.py
+        # thermal site load booleans
+        # for when incl_thermal_loads = 0
+        self.site_thermal_load_exists = (self.site_steam_load is not None and self.site_hotwater_load is not None)
+        # for when incl_thermal_loads = 1
+        self.steam_only = False
+        self.hotwater_only = False
+        if self.site_thermal_load_exists:
+            self.steam_only = (self.site_hotwater_load.max() == 0)
+            self.hotwater_only = (self.site_steam_load.max() == 0)
+
 
     def grow_drop_data(self, years, frequency, load_growth):
-        if self.site_steam_load is not None:
-            self.site_steam_load = Lib.fill_extra_data(self.site_steam_load, years, 0, frequency)
-            # TODO use a non-zero growth rate of steam load? --AE
+        if self.site_thermal_load_exists:
+            self.site_steam_load = Lib.fill_extra_data(self.site_steam_load, years, load_growth, frequency)
             self.site_steam_load = Lib.drop_extra_data(self.site_steam_load, years)
-        if self.site_hotwater_load is not None:
-            self.site_hotwater_load = Lib.fill_extra_data(self.site_hotwater_load, years, 0, frequency)
-            # TODO use a non-zero growth rate of hotwater load? --AE
+            self.site_hotwater_load = Lib.fill_extra_data(self.site_hotwater_load, years, load_growth, frequency)
             self.site_hotwater_load = Lib.drop_extra_data(self.site_hotwater_load, years)
 
     def initialize_variables(self, size):
@@ -90,9 +97,14 @@ class CHP(CT):
         hotwater = self.variables_dict['hotwater']
 
         # to ensure that CHP never produces more steam than it can
-        constraint_list += [cvx.NonPos(steam - self.max_steam_ratio * hotwater)]
+        if not self.steam_only and not self.hotwater_only:
+            constraint_list += [cvx.NonPos(steam - self.max_steam_ratio * hotwater)]
 
-        constraint_list += [cvx.Zero((steam + hotwater) * self.electric_heat_ratio - elec)]
+        # to ensure that the upper limit on CHP size in the size optimization
+        #     will be the smallest system that can meet both howater and steam loads
+        #     use smallest_size_system_needed()
+        if self.being_sized() and self.site_thermal_load_exists:
+            constraint_list += [cvx.NonPos(elec - self.smallest_size_system_needed())]
 
         return constraint_list
 
@@ -106,6 +118,33 @@ class CHP(CT):
         # it is proportional to the electric power generated at a given time
         return self.variables_dict['hotwater']
 
+    def smallest_size_system_needed(self):
+        """ Returns the smallest sized system (in kW) that can mmet the thermal load
+              (both hotwater and steam loads).
+            It is used in a constraint to limit the size of CHP.
+            It checks each time in the time series.
+        """
+        if self.steam_only or self.hotwater_only:
+            minimum_size_needed = (self.site_steam_load + self.sitte_hotwater_load).max()
+        else:
+            site_thermal_load_ratio = self.site_steam_load / self.site_hotwater_load
+            ul_mask = (site_thermal_load_ratio > self.max_steam_ratio)
+            size_needed_to_meet_thermal_loads = np.where(ul_mask,
+                # (where ul_mask is True)
+                #     steam load is too large, so the system throws away hotwater.
+                #     thus the total thermal energy is steam load plus the amount of
+                #     hotwater produced as a results of steam generation
+                self.site_steam_load + self.site_steam_load / self.max_steam_ratio,
+                # (where ul_mask is False)
+                self.site_steam_load + self.site_hotwater_load
+            )
+            minimum_size_needed = size_needed_to_meet_thermal_loads.max()
+
+        minimum_size_needed = self.electric_heat_ratio * minimum_size_needed
+        TellUser.warning(f'CHP constraint: smallest_size_system_needed (kW) = {minimum_size_needed}')
+
+        return minimum_size_needed
+
     def timeseries_report(self):
 
         tech_id = self.unique_tech_id()
@@ -113,10 +152,9 @@ class CHP(CT):
 
         results[tech_id + ' Steam Generation (kW)'] = self.variables_df['steam']
         results[tech_id + ' Hot Water Generation (kW)'] = self.variables_df['hotwater']
-        if self.site_steam_load is not None:
-            results[tech_id + ' Site Steam Thermal Load (BTU/hr)'] = self.site_steam_load
-        if self.site_hotwater_load is not None:
-            results[tech_id + ' Site Hot Water Thermal Load (BTU/hr)'] = self.site_hotwater_load
+        if self.site_thermal_load_exists:
+            results[tech_id + ' Site Steam Thermal Load (kW)'] = self.site_steam_load
+            results[tech_id + ' Site Hot Water Thermal Load (kW)'] = self.site_hotwater_load
 
         return results
 

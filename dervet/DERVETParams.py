@@ -38,6 +38,9 @@ import copy
 from storagevet.ErrorHandling import *
 from pathlib import Path
 
+# TODO -- declare these constants in one place for access across DER-VET
+KW_PER_TON = 3.5168525  # unit conversion (1 ton in kW)
+KW_PER_MMBTU_HR = 293.1 # unit conversion (1 MMBtu/hr in kW)
 
 class ParamsDER(Params):
     """
@@ -51,7 +54,8 @@ class ParamsDER(Params):
     schema_location = Path(__file__).absolute().with_name('Schema.json')
     cba_input_error_raised = False
     cba_input_template = None
-    dervet_only_der_list = ['CT', 'CHP', 'DieselGenset', 'ControllableLoad', 'EV'] # TODO add to this as needed --AE
+    # TODO add to this as needed --AE
+    dervet_only_der_list = ['CT', 'CHP', 'DieselGenset', 'ControllableLoad', 'EV', 'Chiller']
 
     @staticmethod
     def pandas_to_dict(model_parameter_pd):
@@ -140,6 +144,7 @@ class ParamsDER(Params):
         self.CHP = self.read_and_validate('CHP')
         self.ElectricVehicle1 = self.read_and_validate('ElectricVehicle1')
         self.ElectricVehicle2 = self.read_and_validate('ElectricVehicle2')
+        self.Chiller = self.read_and_validate('Chiller')
 
     @classmethod
     def bad_active_combo(cls):
@@ -151,7 +156,7 @@ class ParamsDER(Params):
         """
         slf = cls.template
         other_ders = any([len(slf.CHP), len(slf.CT), len(slf.DieselGenset),
-            len(slf.ElectricVehicle1), len(slf.ElectricVehicle2)])
+            len(slf.ElectricVehicle1), len(slf.ElectricVehicle2), len(slf.Chiller)])
         return super().bad_active_combo(dervet=True, other_ders=other_ders)
 
     @classmethod
@@ -609,16 +614,16 @@ class ParamsDER(Params):
                 # add time series, monthly data, and any scenario case parameters to CHP parameter dictionary
                 if self.Scenario['incl_thermal_load']:
                     try:  # TODO: we allow for multiple CHPs to be defined -- and if there were -- then they all would share the same data. Is this correct? --HN
-                        chp_inputs.update({'site_steam_load': time_series.loc[:, 'Site Steam Thermal Load (BTU/hr)']})
+                        chp_inputs.update({'site_steam_load': KW_PER_MMBTU_HR * time_series.loc[:, 'Site Steam Thermal Load (MMBtu/hr)']})
                     except:
                         pass
                     try:
-                        chp_inputs.update({'site_hotwater_load': time_series.loc[:, 'Site Hot Water Thermal Load (BTU/hr)']})
+                        chp_inputs.update({'site_hotwater_load': KW_PER_MMBTU_HR * time_series.loc[:, 'Site Hot Water Thermal Load (MMBtu/hr)']})
                     except:
                         pass
                     if chp_inputs.get('site_steam_load') is None and chp_inputs.get('site_hotwater_load') is None:
                         # report error when thermal load has neither steam nor hotwater components
-                        self.record_input_error("CHP is missing a site heating load ('Site Steam Thermal Load (BTU/hr)' and/or 'Site Hot Water Thermal Load (BTU/hr)') from timeseries data input")
+                        self.record_input_error("CHP is missing a site heating load ('Site Steam Thermal Load (MMBtu/hr)' and/or 'Site Hot Water Thermal Load (MMBtu/hr)') from timeseries data input")
                     elif chp_inputs.get('site_steam_load') is None or chp_inputs.get('site_hotwater_load') is None:
                         # when only one thermal load exists (steam or hotwater), make the other one with zeroes and warn
                         if chp_inputs.get('site_steam_load') is None:
@@ -632,25 +637,29 @@ class ParamsDER(Params):
                             chp_inputs.update({'site_hotwater_load': all_zeroes})
                             TellUser.warning('since "site hotwater thermal load" data were not input, we create a time series with all zeroes for it')
 
-                try:  # TODO: we allow for multiple CHPs to be defined -- and if there were -- then they all would share the same data. Is this correct? --HN
-                    chp_inputs.update({'natural_gas_price': self.monthly_to_timeseries(self.Scenario['frequency'],
-                                                                                       self.Scenario['monthly_data'].loc[:, ['Natural Gas Price ($/MillionBTU)']])})
-                except KeyError:
-                    self.record_input_error("Missing 'Natural Gas Price ($/MillionBTU)' from monthly data input")
-
         if len(self.CT):
             for id_str, ct_inputs in self.CT.items():
                 ct_inputs.update({'dt': dt})
 
-                try:  # TODO: we allow for multiple CHPs to be defined -- and if there were -- then they all would share the same data. Is this correct? --HN
-                    ct_inputs.update({'natural_gas_price': self.monthly_to_timeseries(self.Scenario['frequency'],
-                                                                                       self.Scenario['monthly_data'].loc[:, ['Natural Gas Price ($/MillionBTU)']])})
-                except KeyError:
-                    self.record_input_error("Missing 'Natural Gas Price ($/MillionBTU)' from monthly data input")
-
         if len(self.DieselGenset):
             for id_str, inputs in self.DieselGenset.items():
                 inputs.update({'dt': dt})
+
+        if len(self.Chiller):
+            if not self.Scenario['incl_thermal_load']:
+                TellUser.warning('with incl_thermal_load = 0, Chiller will ignore any site thermal loads.')
+            for id_str, chiller_input in self.Chiller.items():
+                chiller_input.update({'dt': dt})
+
+                # add time series to Chiller parameter dictionary
+                if self.Scenario['incl_thermal_load']:
+                    try:
+                        chiller_input.update({'site_cooling_load': KW_PER_TON * time_series.loc[:, 'Site Cooling Thermal Load (tons)']})
+                    except:
+                        pass
+                    if chiller_input.get('site_cooling_load') is None:
+                        # report error when thermal load does not have a cooling load
+                        self.record_input_error("Chiller is missing a site cooling load ('Site Cooling Thermal Load (tons)' from timeseries data input")
 
         super().load_technology(names_list)
 
