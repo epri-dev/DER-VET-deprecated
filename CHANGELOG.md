@@ -5,6 +5,15 @@ Questions and feedback can be submitted to the Electric Power Research Institute
 
 The format is based on [Keep a Changelog] (https://keepachangelog.com/en/1.0.0/).
 
+## [1.1.2] - 2021-08-04 to 2021-09-09
+### Changed
+- Changed the expected type to float for yearly_degrade battery input
+
+### Fixed
+- Degradation Fix: more descriptive column header names on Results files
+- Simplifies system_requirements infeasibility checks
+- Fix to allow minimum battery sizing user constraints to work
+
 ## [1.1.1] - 2021-07-09 to 2021-08-03
 ### Fixed
 - Removed comma from soc_target description in the Model Parameters CSV

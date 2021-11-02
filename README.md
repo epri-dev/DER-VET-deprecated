@@ -58,16 +58,16 @@ Follow these steps to run DER-VET through your command line on your local comput
     "root directory"
 
 7. #### Create Python environment
-    We give the user 2 paths to create a python environment for python 3.6.10.
-   >Most Windows users have success with the Conda path.
+    We give the user 2 routes to create a python environment for python 3.6.10.
+   >Most Windows users have success with the Conda route.
 
-    Each path results in a siloed python environment, but with different properties.
-    Choose the conda OR pip path and stick to it. Commands are not interchangeable.
-    >Please remember the path which created the python environment in order to activate it again later.
+    Each route results in a siloed python environment, but with different properties.
+    Choose the conda OR pip route and stick to it. Commands are not interchangeable.
+    >Please remember the route which created the python environment in order to activate it again later.
    > **You will need to activate the python environment to run the model, always.**
 
-    **Conda Path - Recommended Path for Windows OS**
-    This path requires you to open Anaconda Prompt in step 5.
+    **Conda Route - Recommended route for Windows OS**
+    This route requires you to open Anaconda Prompt in step 5.
 
     Enter the following command:
     ```
@@ -75,10 +75,10 @@ Follow these steps to run DER-VET through your command line on your local comput
     ```
     >The python version is specified, meaning conda does not have to be associated with a python 3.6.10.
 
-    **Pip Path**
-    If you have Python 3.6.10 installed directly on your computer, then we recommend trying this path.
+    **Pip Route**
+    If you have Python 3.6.10 installed directly on your computer, then we recommend trying this route.
 
-    >This path lets you to open the prompt of your choice in step 5.
+    >This route lets you to open the prompt of your choice in step 5.
 
     Enter the following commands:
     ```
@@ -88,13 +88,13 @@ Follow these steps to run DER-VET through your command line on your local comput
     >The `pip` should be associated to the **python 3.6.10 installation**
 
 8. #### Activate Python 3.6 environment
-    **Conda Path**
+    **Conda Route**
     Enter the following command into anaconda prompt:
     ```
     conda activate dervet-venv
     ```
 
-    **Pip Path**
+    **Pip Route**
     Enter the corresponding command into the open prompt:
     *On Linux/Mac*
     ```
@@ -106,8 +106,11 @@ Follow these steps to run DER-VET through your command line on your local comput
     ```
 
 9. #### Install project dependencies
-    **Conda Path**
-    Open "./requirements.txt" with a text editor. This file can be found in the root directory. Delete the line with "scipy" in it. Save the file.
+    **Conda Route**
+    Open "./requirements.txt" with a text editor. This file can be found in the root directory.
+
+    Delete the line with "scipy" in it. Save the file.
+
     Then enter the following commands in anaconda prompt:
     ```
     conda install -c conda-forge --file requirements.txt
@@ -115,7 +118,7 @@ Follow these steps to run DER-VET through your command line on your local comput
     pip install -e ./storagevet
     ```
 
-    **Pip Path**
+    **Pip Route**
     Enter the following commands into the open prompt:
     ```
     pip install -r requirements.txt
@@ -154,7 +157,7 @@ DER-VET on you local `C:\` drive.
 
 ### Running Your First Case
 Follow these steps to run DER-VET from the command prompt
-1. ####  Open a command prompt and activate Python environment.
+1. ####  Open a shell/terminal/console/prompt and activate Python environment.
     Skip this step if your python environment is already active.
     >Refer to *New Installation* steps 5 and 8 OR to *Update Old Installation* step 5.
 
@@ -188,7 +191,7 @@ pip install -e ./dervet
 
 We use [Gitlab](https://gitlab.epri.com/storagevet/dervet) for versioning. For the versions available,
 see the [list of releases](https://github.com/epri-dev/DER-VET/releases)  on this repository.
-This is version 1.1.1
+This is version 1.1.2
 
 ## Authors
 
@@ -215,7 +218,7 @@ Please make sure to update tests as appropriate.
 
 This project is licensed under the BSD (3-clause) License - see [LICENSE.txt](./LICENSE.txt).
 
-DER-VET v1.1.1
+DER-VET v1.1.2
 
 Copyright © 2021 Electric Power Research Institute, Inc. All Rights Reserved.
 

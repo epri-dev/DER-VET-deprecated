@@ -133,6 +133,11 @@ def test_post_facto_calculations_with_user_constraints():
     assert_ran(MP / f"Model_Parameters_Template_issue162{CSV}")
 
 
+def test_post_facto_calculations_with_user_constraints_error():
+    with pytest.raises(ArithmeticError):
+        assert_ran(MP / f"Model_Parameters_Template_issue162_error{CSV}")
+
+
 def test_battery_sizing4reliability_soc_init_small():
     with pytest.raises(ParameterError):
         assert_ran(MP / f"EV_Battery_Sizing_MP{CSV}")

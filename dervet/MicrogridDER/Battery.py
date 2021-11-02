@@ -146,9 +146,9 @@ class Battery(BatteryTech.Battery, ESSSizing):
                 no_optimizations_per_year = len(self.degrade_data.iloc[1:].index) / no_years_solved
                 for indx, year in enumerate(analysis_years):
                     first_degrad_inx = indx * no_optimizations_per_year
-                    initial_degradation = self.degrade_data.iloc[int(first_degrad_inx)]['degradation']
+                    initial_degradation = self.degrade_data.iloc[int(first_degrad_inx)]['degradation progress %']
                     last_degrad_idx = first_degrad_inx + no_optimizations_per_year
-                    final_degradation = self.degrade_data.iloc[int(last_degrad_idx)]['degradation']
+                    final_degradation = self.degrade_data.iloc[int(last_degrad_idx)]['degradation progress %']
                     tot_yr_degradation = final_degradation - initial_degradation
                     self.yearly_degradation_report[pd.Period(year, freq='y')] = tot_yr_degradation
                 # fill in the remaining years (assume constant degradation)
@@ -156,7 +156,7 @@ class Battery(BatteryTech.Battery, ESSSizing):
                 # estimate lifetime with average yearly degradation
                 avg_lifetime = (1-self.state_of_health)/self.yearly_degradation_report.mean()
 
-                # reset failure years
+            # reset failure years
                 self.failure_preparation_years = []
 
             # set EXPECTED_LIFETIME to be the actual EOL -- it should never be 0 years
