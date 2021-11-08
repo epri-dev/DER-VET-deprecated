@@ -2118,6 +2118,23 @@
                 "max_num": "1",
                 "type": "service"
             },
+            "ER": {
+                "keys": {
+                    "pareto_analysis": {
+                        "type": "bool",
+                        "allowed_values": "1|0",
+                        "unit": "yes/no"
+                    },
+                    "number_of_pareto_iterations": {
+                        "cba": "n",
+                        "max": "100.0",
+                        "min": "0",
+                        "type": "int"
+                    }
+                },
+                "max_num": "1",
+                "type": "service"
+            },
             "Scenario": {
                 "keys": {
                     "apply_interconnection_constraints": {

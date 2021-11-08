@@ -27,12 +27,15 @@ Copyright (c) 2021, Electric Power Research Institute
  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
+import copy
+
 """
 MicrogridScenario.py
 
 This Python class contains methods and attributes vital for completing the scenario analysis.
 """
 
+from dervet.MicrogridValueStreams.EmissionReduction import EmissionReduction
 from dervet.MicrogridValueStreams.Reliability import Reliability
 from dervet.MicrogridDER.Battery import Battery
 from dervet.MicrogridDER.CAES import CAES
@@ -94,7 +97,8 @@ class MicrogridScenario(Scenario):
         'NSR': NonspinningReserve,
         'DCM': DemandChargeReduction,
         'retailTimeShift': EnergyTimeShift,
-        'Reliability': Reliability
+        'Reliability': Reliability,
+        'ER': EmissionReduction,  # TODO come up with better name, maybe: EmissionsFootprint or GhgEmissions
     }
 
     def __init__(self, input_tree):
@@ -114,10 +118,14 @@ class MicrogridScenario(Scenario):
             'CT': input_tree.CT,
             'CHP': input_tree.CHP,
         })
-        self.value_stream_input_map.update({'Reliability': input_tree.Reliability})
+        self.value_stream_input_map.update({
+            'Reliability': input_tree.Reliability,
+            'ER': input_tree.ER
+        })
         # flags to indicate which module dervet should go to
         self.deferral_sizing = False
         self.reliability_sizing = False
+        self.emission_reduction = False
         TellUser.debug("ScenarioSizing initialized ...")
 
     def set_up_poi_and_service_aggregator(self, point_of_interconnection_class=MicrogridPOI,
@@ -127,6 +135,7 @@ class MicrogridScenario(Scenario):
         """
         super().set_up_poi_and_service_aggregator(MicrogridPOI,
                                                   MicrogridServiceAggregator)
+        self.emission_reduction = 'ER' in self.service_agg.value_streams.keys()
 
     def initialize_cba(self):
         """ Initializes DER-VET's cost benefit analysis module with user given inputs
@@ -284,6 +293,31 @@ class MicrogridScenario(Scenario):
                     f'can provide regulation down, first occurring at time {first_time}.')
                 has_errors = True
         return has_errors
+
+    def emissions_module(self):
+        """ Preforms a pareto analysis to find the pareto frontier.
+        This method preforms a sensitivity analysis of the value of ALPHA (which weights the emissions objective 
+        against other objectives of the minimization optimization).
+
+        """
+        emissions_reduction = self.service_agg.value_streams['ER']  # copy pointer to OG instance
+        original_ders = copy.deepcopy(self.poi)
+        original_services = copy.deepcopy(self.service_agg)
+        emissions_reduction.technologies = original_ders.der_list
+        
+        for value in emissions_reduction.pareto_values():
+            # run optimization loop
+            self.optimize_problem_loop()
+            # save objective values in table
+            emissions_reduction.save_objectives(self.service_agg.value_streams['ER'].pareto_alpha, self)
+            # reset poi and service aggregator
+            self.poi = copy.deepcopy(original_ders)
+            self.service_agg = copy.deepcopy(original_services)
+            # update pareto_curve of new instance
+            self.service_agg.value_streams['ER'].update_pareto_alpha(value)
+        print(f"pareto curve complete")
+        self.service_agg.value_streams['ER'] = emissions_reduction
+        self.opt_engine = False  # dont run anymore optimizations
 
     def optimize_problem_loop(self, **kwargs):
         """ This function selects on opt_agg of data in time_series and calls optimization_problem on it.

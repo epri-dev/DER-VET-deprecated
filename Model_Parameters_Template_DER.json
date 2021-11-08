@@ -42,7 +42,7 @@
                             "active": "n",
                             "value": "100"
                         },
-                        "opt_value": "100",
+                        "opt_value": "0",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -55,7 +55,7 @@
                             "active": "n",
                             "value": "800"
                         },
-                        "opt_value": "800",
+                        "opt_value": "0",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -82,7 +82,7 @@
                         "type": "float"
                     },
                     "construction_year": {
-                        "opt_value": "2016",
+                        "opt_value": "2013",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -189,7 +189,7 @@
                             "active": "n",
                             "value": "10"
                         },
-                        "opt_value": "10",
+                        "opt_value": "0",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -202,7 +202,7 @@
                             "active": "n",
                             "value": "3"
                         },
-                        "opt_value": "100",
+                        "opt_value": "0",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -287,7 +287,7 @@
                         "type": "int"
                     },
                     "operation_year": {
-                        "opt_value": "2017",
+                        "opt_value": "2014",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -371,7 +371,7 @@
                         "type": "int"
                     },
                     "rte": {
-                        "opt_value": "85",
+                        "opt_value": "75",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -1508,6 +1508,31 @@
                 }
             }
         },
+        "ER": {
+            "1": {
+                "active": "yes",
+                "keys": {
+                    "number_of_pareto_iterations": {
+                        "opt_value": "15",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "None",
+                            "value": "nan"
+                        },
+                        "type": "nan"
+                    },
+                    "pareto_analysis": {
+                        "opt_value": "1",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "None",
+                            "value": "nan"
+                        },
+                        "type": "nan"
+                    }
+                }
+            }
+        },
         "ElectricVehicle1": {
             "1": {
                 "active": "no",
@@ -2027,7 +2052,7 @@
                         "type": "bool"
                     },
                     "federal_tax_rate": {
-                        "opt_value": "23",
+                        "opt_value": "0",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -2071,7 +2096,7 @@
                         "type": "float"
                     },
                     "state_tax_rate": {
-                        "opt_value": "10",
+                        "opt_value": "0",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -2899,10 +2924,10 @@
         },
         "Results": {
             ".": {
-                "active": "no",
+                "active": "yes",
                 "keys": {
                     "dir_absolute_path": {
-                        "opt_value": "enter absolute path here",
+                        "opt_value": "C:\\Users\\phna001\\Box\\stuff\\2021 TI Generalizing Emission Estimation in Microgrid Planning\\Data\\ERCOT_2014_validation",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -2911,7 +2936,7 @@
                         "type": "string"
                     },
                     "errors_log_path": {
-                        "opt_value": "Enter absolute path here  (include the folder name you want the file to be contained inside)",
+                        "opt_value": "C:\\Users\\phna001\\Box\\stuff\\2021 TI Generalizing Emission Estimation in Microgrid Planning\\Data\\ERCOT_2014_validation",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -2920,7 +2945,7 @@
                         "type": "string"
                     },
                     "label": {
-                        "opt_value": "_2MW_5hr",
+                        "opt_value": "_ercot2014",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -2979,7 +3004,7 @@
                         "type": "bool"
                     },
                     "binary": {
-                        "opt_value": "0",
+                        "opt_value": "1",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -2997,7 +3022,7 @@
                         "type": "float"
                     },
                     "dt": {
-                        "opt_value": "1",
+                        "opt_value": "0.25",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -3010,7 +3035,7 @@
                             "active": "n",
                             "value": "2030"
                         },
-                        "opt_value": "2030",
+                        "opt_value": "2014",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -3140,7 +3165,7 @@
                         "type": "string/int"
                     },
                     "opt_years": {
-                        "opt_value": "2017",
+                        "opt_value": "2014",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -3175,7 +3200,7 @@
                             "active": "n",
                             "value": "2017"
                         },
-                        "opt_value": "2017",
+                        "opt_value": "2014",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",
@@ -3188,7 +3213,7 @@
                             "active": "n",
                             "value": ".\\dervet\\storagevet\\Data\\hourly_timeseries.csv"
                         },
-                        "opt_value": ".\\data\\hourly_timeseries.csv",
+                        "opt_value": ".\\data\\min15_timeseries.xlsx",
                         "sensitivity": {
                             "active": "no",
                             "coupled": "None",

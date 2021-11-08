@@ -42,8 +42,7 @@ from storagevet.ErrorHandling import *
 
 
 class DERVET:
-    """ DERVET API. This will eventually allow StorageVET to be imported and
-    used like any other python library.
+    """ DERVET API. Allows DER-VET to be imported and used like any other python library.
 
     """
 
@@ -61,7 +60,7 @@ class DERVET:
         self.verbose = verbose
 
         # Initialize Params Object from Model Parameters and Simulation Cases
-        self.cases = ParamsDER.initialize(model_parameters_path, self.verbose)
+        self.cases = ParamsDER.initialize(model_parameters_path, self.verbose, **kwargs)
         self.results = MicrogridResult.initialize(ParamsDER.results_inputs,
                                                   ParamsDER.case_definitions)
 
@@ -78,6 +77,7 @@ class DERVET:
             run.initialize_cba()
             run.fill_and_drop_extra_data()
             run.sizing_module()
+            run.emissions_module()  # run emissions analysis (set up as pareto analysis)
             run.optimize_problem_loop()
 
             MicrogridResult.add_instance(key, run)

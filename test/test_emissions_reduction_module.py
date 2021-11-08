@@ -27,4 +27,43 @@ Copyright (c) 2021, Electric Power Research Institute
  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
-__all__ = ['Reliability', 'EmissionReduction', 'EmissionsUtilities']
+"""
+This file tests analysis cases have to do with the emissions reduction module.
+
+"""
+import pytest
+from pathlib import Path
+from test.TestingLib import *
+from storagevet.ErrorHandling import *
+
+
+MP = Path("./test/model_params")
+JSON = '.json'
+CSV = '.csv'
+TEMP_PATH = Path(r"C:\Users\phna001\Documents\dervet-gui\DervetBackEnd\dervet\Model_Parameters_Template_DER.csv")
+
+"""
+Load shedding TESTS
+"""
+
+
+MAX_PERCENT_ERROR = 3
+
+
+class TestEmissionsParetoAnalysis:
+    def setup_class(self):
+        self.mp_name = TEMP_PATH
+        self.results = run_case(self.mp_name)
+        # self.validated_folder = RESULTS / Path("./reliability_load_shed1")
+
+    def test_services_were_part_of_problem(self):
+        assert_usecase_considered_services(self.results, ['DA', 'ER'])
+
+    # def test_proforma_results_are_expected(self):
+    #     compare_proforma_results(self.results, self.validated_folder / "pro_forma_2mw_5hr.csv",
+    #                              MAX_PERCENT_ERROR)
+    #
+    # def test_size_results_are_expected(self):
+    #     compare_size_results(self.results, self.validated_folder / "size_2mw_5hr.csv",
+    #                          MAX_PERCENT_ERROR)
+

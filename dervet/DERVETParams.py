@@ -37,6 +37,7 @@ from storagevet.Params import Params
 import copy
 from storagevet.ErrorHandling import *
 from pathlib import Path
+from dervet.MicrogridValueStreams.EmissionsUtilities import convert_monthly_tod_mef_to_hourly, convert_seasonal_hod_mef_to_hourly
 
 
 class ParamsDER(Params):
@@ -51,7 +52,8 @@ class ParamsDER(Params):
     schema_location = Path(__file__).absolute().with_name('Schema.json')
     cba_input_error_raised = False
     cba_input_template = None
-    dervet_only_der_list = ['CT', 'CHP', 'DieselGenset', 'ControllableLoad', 'EV'] # TODO add to this as needed --AE
+    dervet_only_der_list = ['CT', 'CHP', 'DieselGenset', 'ControllableLoad', 'EV'] # TODO add to this as needed --AE  should we be a initialiing with a mutable datatype? -HN
+    extra_kwargs = None
 
     @staticmethod
     def pandas_to_dict(model_parameter_pd):
@@ -91,7 +93,7 @@ class ParamsDER(Params):
         return json_tree
 
     @classmethod
-    def initialize(cls, filename, verbose):
+    def initialize(cls, filename, verbose, **kwargs):
         """ In addition to everything that initialize does in Params, this class will look at
         Evaluation Value to - 1) determine if cba value can be given and validate; 2) convert
         any referenced data into direct data 3) if sensitivity analysis, then make sure enough
@@ -104,6 +106,7 @@ class ParamsDER(Params):
 
             Returns dictionary of instances of Params, each key is a number
         """
+        cls.extra_kwargs = kwargs
         cls.instances = super().initialize(filename, verbose)  # everything that initialize does in Params (steps 1-4)
         # 1) INITIALIZE CLASS VARIABLES
         cls.sensitivity['cba_values'] = dict()
@@ -134,6 +137,7 @@ class ParamsDER(Params):
         """
         super().__init__()
         self.Reliability = self.read_and_validate('Reliability')  # Value Stream
+        self.ER = self.read_and_validate('ER')
         self.ControllableLoad = self.read_and_validate('ControllableLoad')
         self.DieselGenset = self.read_and_validate('DieselGenset')
         self.CT = self.read_and_validate('CT')
@@ -726,6 +730,7 @@ class ParamsDER(Params):
             except KeyError:
                 self.record_input_error("Missing 'Critial Load (kW)' from timeseries input. Please include a critical load.")
             if self.Reliability['load_shed_percentage']:
+                # TODO move to read in referenced data method
                 try:
                     self.Reliability['load_shed_data'] = self.referenced_data["load_shed_percentage"][self.Reliability['load_shed_perc_filename']]
                 except KeyError:
@@ -757,4 +762,15 @@ class ParamsDER(Params):
                 self.LF.update({'lf_d_max': self.Scenario['time_series'].loc[:, 'LF Reg Down Max (kW)'],
                                 'lf_d_min': self.Scenario['time_series'].loc[:, 'LF Reg Down Min (kW)']})
 
+        if self.ER is not None:
+            self.ER["dt"] = self.Scenario["dt"]
+            try:
+                self.ER.update({'mef': self.Scenario['time_series'].loc[:, 'MEF']})
+            except KeyError:
+                self.record_input_error(
+                    "Missing 'MEF' from timeseries input. Please include a marginal emission factors.")
+
+            # HARDCODE LOCATION OF DATA (region, data year and pollutant are defined in func)
+            # self.ER['mef'] = convert_monthly_tod_mef_to_hourly(self.Scenario['opt_years'], self.Scenario['dt'])
+            # self.ER['mef'] = convert_seasonal_hod_mef_to_hourly(self.Scenario['opt_years'], self.Scenario['dt'])
         TellUser.debug("Successfully prepared the value-streams")

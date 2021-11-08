@@ -35,7 +35,7 @@ Python-based version of DERVET.
 """
 import argparse
 from dervet.DERVET import DERVET
-
+import os
 
 if __name__ == '__main__':
 
@@ -53,6 +53,7 @@ if __name__ == '__main__':
     parser.add_argument('--gitlab-ci', action='store_true',
                         help='specify this flag for gitlab-ci testing to skip user input')
     arguments = parser.parse_args()
-
-    case = DERVET(arguments.parameters_filename, verbose=arguments.verbose, ignore_cba_valuation=True)
+    
+    os.chdir(os.path.dirname(arguments.parameters_filename))
+    case = DERVET(arguments.parameters_filename, verbose=arguments.verbose)
     case.solve()
