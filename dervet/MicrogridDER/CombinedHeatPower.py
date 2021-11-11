@@ -33,6 +33,7 @@ CHP Sizing class
 This Python class contains methods and attributes specific for technology analysis within StorageVet.
 """
 import cvxpy as cvx
+import numpy as np
 from dervet.MicrogridDER.CombustionTurbine import CT
 import storagevet.Library as Lib
 from storagevet.ErrorHandling import *

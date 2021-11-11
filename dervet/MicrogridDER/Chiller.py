@@ -95,10 +95,19 @@ class Chiller(DER, ContinuousSizing, DERExtension):
 
         # let the power_source input control the fuel_type
         if self.power_source == 'natural gas':
+            # a natural-gas-powered chiller
             self.fuel_type = 'gas'
             self.is_fuel = True
-        else:
+        elif self.power_source == 'heat':
+            # a chiller powered by a local heat source (CHP, Boiler, etc.)
+            self.is_heat = True
             self.fuel_type = None
+            self.is_fuel = False
+        elif self.power_source == 'electric':
+            # an electric chiller
+            self.is_electric = True
+            self.fuel_type = None
+            self.is_fuel = False
 
         self.is_cold = True
 
@@ -107,7 +116,7 @@ class Chiller(DER, ContinuousSizing, DERExtension):
         self.can_participate_in_market_services = False
 
         # time series inputs
-        self.site_cooling_load = params.get('site_cooling_load')    # input as MMBtu/hr, but converted to kW in DERVETParams.py
+        self.site_cooling_load = params.get('site_cooling_load')    # input as tons, but converted to kW in DERVETParams.py
 
         self.max_rated_power = KW_PER_TON * params['max_rated_capacity']  # tons/chiller
         self.min_rated_power = KW_PER_TON * params['min_rated_capacity'] # tons/chiller
@@ -198,12 +207,12 @@ class Chiller(DER, ContinuousSizing, DERExtension):
             self.variable_om = variable_cost
 
         fixed_om_cost = input_dict.get('fixed_om_cost')
-        if variable_cost is not None:
+        if fixed_om_cost is not None:
             self.fixed_om = fixed_om_cost
 
-        ccost_kw = input_dict.get('ccost_kW')
-        if ccost_kw is not None:
-            self.capital_cost_function[1] = ccost_kw
+        fuel_cost = input_dict.get(f'fuel_price_{self.fuel_type}')
+        if fuel_cost is not None:
+            self.fuel_cost = fuel_cost
 
     def name_plate_capacity(self, solution=False):
         """ Returns the value of 1 generator in a set of generators
@@ -258,7 +267,7 @@ class Chiller(DER, ContinuousSizing, DERExtension):
             max_discharging_range = self.discharge_capacity()
         return max_discharging_range
 
-    def get_capex(self):
+    def get_capex(self, **kwargs):
         """ Returns the capex of a given technology
         """
         return np.dot(self.capital_cost_function, [self.n, self.discharge_capacity()])
@@ -275,7 +284,7 @@ class Chiller(DER, ContinuousSizing, DERExtension):
             results[tech_id + ' Site Cooling Thermal Load (kW)'] = self.site_cooling_load
 
     # def proforma_report(self, opt_years, results):
-        # TODO -- fill this in
+        # TODO -- fill this in, using an example from the cba code
 
     #def get_discharge(self, mask):
 
