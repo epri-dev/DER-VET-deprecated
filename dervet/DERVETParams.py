@@ -181,6 +181,7 @@ class ParamsDER(Params):
             'DieselGenset': cls.read_and_validate_evaluation('DieselGenset'),  # fuel_price,
             'ElectricVehicle1': cls.read_and_validate_evaluation('ElectricVehicle1'),
             'ElectricVehicle2': cls.read_and_validate_evaluation('ElectricVehicle2'),
+            'Chiller': cls.read_and_validate_evaluation('Chiller'),
             # 'ControllableLoad': cls.read_and_validate_evaluation('ControllableLoad')
         }
 

@@ -245,6 +245,14 @@ class MicrogridPOI(POI):
                                                                        steam_in, hotwater_in,
                                                                        cold_in, annuity_scalar)
 
+        print('opt_size: ', sum(mask))
+        print(f'power_in:\n  {power_in.size}\n  {power_in.name()}\n  {power_in.value}')
+        print(f'power_out:\n  {power_out.size}\n  {power_out.name()}\n  {power_out.value}')
+        print(f'steam_in:\n  {steam_in.size}\n  {steam_in.name()}\n  {steam_in.value}')
+        print(f'hotwater_in:\n  {hotwater_in.size}\n  {hotwater_in.name()}\n  {hotwater_in.value}')
+        print(f'cold_in:\n  {cold_in.size}\n  {cold_in.name()}\n  {cold_in.value}')
+        print
+
         # thermal power balance constraints
         if self.site_steam_load is not None:
             if steam_in.variables():
@@ -258,6 +266,13 @@ class MicrogridPOI(POI):
             if cold_in.variables():
                 TellUser.debug('adding thermal cooling power balance constraint')
                 constraint_list += [cvx.NonPos(-1 * cold_in + self.site_cooling_load)]
+
+#        print('\nconstraints:')
+#        print('\n'.join([k.name() for k in constraint_list]))
+#
+#        print('\ncosts:')
+#        print('\n'.join([f'{k}: {v}' for k, v in obj_expression.items()]))
+#        print()
 
         return obj_expression, constraint_list
 

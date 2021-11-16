@@ -327,6 +327,11 @@ class MicrogridScenario(Scenario):
             if not len(constraints) and not len(functions.values()):
                 TellUser.info(f"Optimization window #{opt_period} does not have any constraints or objectives to minimize -- SKIPPING...")
                 continue
+            print(f'\nFinal constraints ({len(constraints)}):')
+            print('\n'.join([k.name() for k in constraints]))
+            print(f'\ncosts ({len(functions)}):')
+            print('\n'.join([f'{k}: {v}' for k, v in functions.items()]))
+            print()
             cvx_problem, obj_expressions, cvx_error_msg = self.solve_optimization(functions, constraints)
             self.save_optimization_results(opt_period, sub_index, cvx_problem, obj_expressions, cvx_error_msg)
 

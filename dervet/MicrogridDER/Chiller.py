@@ -48,6 +48,7 @@ __version__ = 'beta'  # beta version
 
 import cvxpy as cvx
 import numpy as np
+import pandas as pd
 import storagevet.Library as Lib
 from storagevet.Technology.DistributedEnergyResource import DER
 from dervet.MicrogridDER.DERExtension import DERExtension
@@ -74,7 +75,7 @@ class Chiller(DER, ContinuousSizing, DERExtension):
 
         KW_PER_TON = 3.5168525  # unit conversion (1 ton in kW)
 
-        self.technology_type = 'thermal'
+        self.technology_type = 'Thermal'
         self.tag = 'Chiller'
 
         # cop is the ratio of cooling provided to the power input
@@ -95,12 +96,14 @@ class Chiller(DER, ContinuousSizing, DERExtension):
 
         # let the power_source input control the fuel_type
         if self.power_source == 'natural gas':
+            # FIXME: this is broken
             # a natural-gas-powered chiller
             self.fuel_type = 'gas'
             self.is_fuel = True
         elif self.power_source == 'heat':
+            # FIXME: this is broken
             # a chiller powered by a local heat source (CHP, Boiler, etc.)
-            self.is_heat = True
+            self.is_hot = True
             self.fuel_type = None
             self.is_fuel = False
         elif self.power_source == 'electric':
@@ -182,14 +185,17 @@ class Chiller(DER, ContinuousSizing, DERExtension):
             self.name + ' variable': cvx.sum(self.variable_om * self.dt * annuity_scalar * total_out)
         })
 
+        print(f'{self.name}--power_source: {self.power_source}')
         if self.power_source == 'electricity':
-            print('')
+            # FIXME:
+            zappa = None
         elif self.power_source == 'natural gas':
             # add fuel cost in $/kWh
             fuel_exp = cvx.sum(total_out * self.cop * self.fuel_cost * self.dt * annuity_scalar)
             costs.update({self.name + ' fuel_cost': fuel_exp})
         elif self.power_source == 'heat':
-            print('')
+            # FIXME:
+            zappa = None
 
         return costs
 
@@ -274,6 +280,8 @@ class Chiller(DER, ContinuousSizing, DERExtension):
 
     #def qualifying_capacity(self, event_length):
 
+    #def get_discharge(self, mask):
+
     def timeseries_report(self):
         tech_id = self.unique_tech_id()
         results = super().timeseries_report()
@@ -283,9 +291,15 @@ class Chiller(DER, ContinuousSizing, DERExtension):
         if self.site_cooling_load is not None:
             results[tech_id + ' Site Cooling Thermal Load (kW)'] = self.site_cooling_load
 
-    # def proforma_report(self, opt_years, results):
+        return results
+
+    def proforma_report(self, apply_inflation_rate_func, fill_forward_func, results):
+        #super().proforma_report()
         # TODO -- fill this in, using an example from the cba code
+        # FIXME: is this right?
+        if not self.zero_column_name():
+            return None
 
-    #def get_discharge(self, mask):
+        pro_forma = pd.DataFrame({self.zero_column_name(): -self.get_capex(solution=True)}, index=['CAPEX Year'])
 
-
+        return pro_forma
