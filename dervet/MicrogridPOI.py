@@ -244,8 +244,18 @@ class MicrogridPOI(POI):
         obj_expression, constraint_list = super().optimization_problem(mask, power_in, power_out,
                                                                        steam_in, hotwater_in,
                                                                        cold_in, annuity_scalar)
+        # print parameters for each DER
+        for der_instance in self.active_ders:
+            print()
+            print('{}: {:14} {:>5}'.format(der_instance.name, 'tech_type = ', str(der_instance.technology_type)))
+            print('{}: {:14} {:>5}'.format(der_instance.name, 'being_sized = ', str(der_instance.being_sized())))
+            print('{}: {:14} {:>5}'.format(der_instance.name, 'is_hot = ', str(der_instance.is_hot)))
+            print('{}: {:14} {:>5}'.format(der_instance.name, 'is_cold = ', str(der_instance.is_cold)))
+            print('{}: {:14} {:>5}'.format(der_instance.name, 'is_electric = ', str(der_instance.is_electric)))
+            print('{}: {:14} {:>5}'.format(der_instance.name, 'is_fuel = ', str(der_instance.is_fuel)))
 
-        print('opt_size: ', sum(mask))
+        # print info in these function arguments
+        print('\nopt_size: ', sum(mask))
         print(f'power_in:\n  {power_in.size}\n  {power_in.name()}\n  {power_in.value}')
         print(f'power_out:\n  {power_out.size}\n  {power_out.name()}\n  {power_out.value}')
         print(f'steam_in:\n  {steam_in.size}\n  {steam_in.name()}\n  {steam_in.value}')
