@@ -97,6 +97,10 @@ class CHP(CT):
         steam = self.variables_dict['steam']
         hotwater = self.variables_dict['hotwater']
 
+        # electric energy and heat (steam + hotwater) energy generated are proportional
+        #   and defined by electric_heat_ratio
+        constraint_list += [cvx.Zero(elec - self.electric_heat_ratio * (steam  + hotwater))]
+
         # to ensure that CHP never produces more steam than it can
         if not self.steam_only and not self.hotwater_only:
             constraint_list += [cvx.NonPos(steam - self.max_steam_ratio * hotwater)]
@@ -109,12 +113,12 @@ class CHP(CT):
 
         return constraint_list
 
-    def get_steam_recovered(self, mask):
+    def get_steam_generated(self, mask):
         # thermal power is recovered in a CHP plant whenever electric power is being generated
         # it is proportional to the electric power generated at a given time
         return self.variables_dict['steam']
 
-    def get_hotwater_recovered(self, mask):
+    def get_hotwater_generated(self, mask):
         # thermal power is recovered in a CHP plant whenever electric power is being generated
         # it is proportional to the electric power generated at a given time
         return self.variables_dict['hotwater']

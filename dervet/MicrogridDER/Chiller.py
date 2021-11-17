@@ -96,17 +96,15 @@ class Chiller(DER, ContinuousSizing, DERExtension):
 
         # let the power_source input control the fuel_type
         if self.power_source == 'natural gas':
-            # FIXME: this is broken
             # a natural-gas-powered chiller
             self.fuel_type = 'gas'
             self.is_fuel = True
         elif self.power_source == 'heat':
-            # FIXME: this is broken
             # a chiller powered by a local heat source (CHP, Boiler, etc.)
             self.is_hot = True
             self.fuel_type = None
             self.is_fuel = False
-        elif self.power_source == 'electric':
+        elif self.power_source == 'electricity':
             # an electric chiller
             self.is_electric = True
             self.fuel_type = None
@@ -137,11 +135,18 @@ class Chiller(DER, ContinuousSizing, DERExtension):
             self.site_cooling_load = Lib.drop_extra_data(self.site_cooling_load, years)
 
     def initialize_variables(self, size):
-        # TODO -- add rated_capacity sizing optimization variable here, when sizing
-        # NOTE: this is handled by size_constraints
         self.variables_dict = {
             'cold': cvx.Variable(shape=size, name=f'{self.name}-coldP', nonneg=True),
         }
+
+    def get_charge(self, mask):
+        # when powered by electricity, return the electrical load
+        #   this is cooling-load / cop
+        if self.is_electric:
+            return cvx.Parameter(value=self.site_cooling_load[mask].values / self.cop, shape=sum(mask), name=f'{self.name}-elecP')
+        else:
+            # returns all zeroes (from base class)
+            return super().get_charge(mask)
 
     def constraints(self, mask, **kwargs):
         constraint_list = super().constraints(mask)
@@ -150,34 +155,18 @@ class Chiller(DER, ContinuousSizing, DERExtension):
         # limit the cold power of the chiller to at most its rated power
         constraint_list += [cvx.NonPos(cold - self.rated_power)]
 
-        ## conditional constraints that depend on the power source of the chiller
-        #if self.power_source == 'electricity':
-        #    # TODO -- add the additional electricl load
-        #    constraint_list += [cvx.Zero(cold / self.cop)]
-        #
-        #elif self.power_source == 'natural gas':
-        #    # TODO -- add the additional NG use
-        #    constraint_list += [cvx.Zero(cold / self.cop)]
-        #
-        #elif self.power_source == 'heat':
-        #    # TODO -- add the additional heat load
-        #    constraint_list += [cvx.Zero(cold / self.cop)]
-
         constraint_list += self.size_constraints
         return constraint_list
 
-    def get_cold_recovered(self, mask):
+    def get_cold_generated(self, mask):
         # thermal power is recovered in a Chiller whenever electric power is being generated
         # it is proportional to the electric power generated at a given time
         return self.variables_dict['cold']
 
-
     def objective_function(self, mask, annuity_scalar=1):
-        # TODO -- this needs fixes
         costs = super().objective_function(mask, annuity_scalar)
         costs.update(self.sizing_objective())
 
-        # TODO -- fix this ? use power_in ?
         total_out = self.variables_dict['cold']
 
         costs.update({
@@ -186,16 +175,17 @@ class Chiller(DER, ContinuousSizing, DERExtension):
         })
 
         print(f'{self.name}--power_source: {self.power_source}')
-        if self.power_source == 'electricity':
-            # FIXME:
-            zappa = None
-        elif self.power_source == 'natural gas':
+        #if self.power_source == 'electricity':
+        #    # this manifests as an increase in the electricity bill and is handled in storagevet POI.
+        #    # agg_power_flows_in accumulates elec power from a chiller with get_charge()
+        if self.power_source == 'natural gas':
             # add fuel cost in $/kWh
             fuel_exp = cvx.sum(total_out * self.cop * self.fuel_cost * self.dt * annuity_scalar)
             costs.update({self.name + ' fuel_cost': fuel_exp})
-        elif self.power_source == 'heat':
-            # FIXME:
-            zappa = None
+        #elif self.power_source == 'heat':
+        #    # the chiller consumes heat
+        #    # the fuel cost should show up in the boiler/CHP's fuel cost output.
+        #    # add to thermal energy balance (hotwater) in dervetPOI
 
         return costs
 
@@ -277,10 +267,6 @@ class Chiller(DER, ContinuousSizing, DERExtension):
         """ Returns the capex of a given technology
         """
         return np.dot(self.capital_cost_function, [self.n, self.discharge_capacity()])
-
-    #def qualifying_capacity(self, event_length):
-
-    #def get_discharge(self, mask):
 
     def timeseries_report(self):
         tech_id = self.unique_tech_id()
