@@ -188,7 +188,7 @@ class MicrogridPOI(POI):
 
             # thermal power recovered: hot (steam/hotwater) and cold
             #if der_inst.is_hot:
-            if der_inst.tag == 'CHP':
+            if der_inst.tag in ['CHP', 'Boiler']:
                 if self.site_steam_load is None and self.site_hotwater_load is None:
                     TellUser.warning('A heat source technology is active ' +
                                      f'({der_inst.unique_tech_id()}), but you have set the ' +
@@ -214,27 +214,20 @@ class MicrogridPOI(POI):
                     TellUser.debug(f'adding cold generated from this DER: ' +
                                    f'{der_inst.unique_tech_id()}')
                     agg_thermal_cooling_power += der_inst.get_cold_generated(mask)
-                if der_inst.is_hot:
-                    # FIXME: when a chiller is powered by heat, we subtract cold_recovered from gen_sum?
-                    # -= der_inst.get_cold_recovered(mask)
-                    zappa = None
-                elif der_inst.power_source == 'electricity':
-                    # FIXME: when a chiller is powered by electricity, we subtract cold_recovered from gen_sum?
-                    #gen_sum -= der_inst.get_cold_recovered(mask)
-                    zappa = None
 
-        print('\nget_state_of_system Result:')
-        print(f'load_sum ({load_sum.size}): {load_sum.value}')
-        print(f'var_gen_sum ({var_gen_sum.size}): {var_gen_sum.value}')
-        print(f'gen_sum ({gen_sum.size}): {gen_sum.value}')
-        print(f'tot_net_ess ({tot_net_ess.size}): {tot_net_ess.value}')
-        print(f'total_soe ({total_soe.size}): {total_soe.value}')
-        print(f'agg_power_flows_in ({agg_power_flows_in.size}): {agg_power_flows_in.value}')
-        print(f'agg_power_flows_out ({agg_power_flows_out.size}): {agg_power_flows_out.value}')
-        print(f'agg_steam_heating_power ({agg_steam_heating_power.size}): {agg_steam_heating_power.value}')
-        print(f'agg_hotwater_heating_power ({agg_hotwater_heating_power.size}): {agg_hotwater_heating_power.value}')
-        print(f'agg_thermal_cooling_power ({agg_thermal_cooling_power.size}): {agg_thermal_cooling_power.value}')
-        print()
+#        print('\nget_state_of_system Result:')
+#        print(f'load_sum ({load_sum.size}): {load_sum.value}')
+#        print(f'var_gen_sum ({var_gen_sum.size}): {var_gen_sum.value}')
+#        print(f'gen_sum ({gen_sum.size}): {gen_sum.value}')
+#        print(f'tot_net_ess ({tot_net_ess.size}): {tot_net_ess.value}')
+#        print(f'total_soe ({total_soe.size}): {total_soe.value}')
+#        print(f'agg_power_flows_in ({agg_power_flows_in.size}): {agg_power_flows_in.value}')
+#        print(f'agg_power_flows_out ({agg_power_flows_out.size}): {agg_power_flows_out.value}')
+#        print(f'agg_steam_heating_power ({agg_steam_heating_power.size}): {agg_steam_heating_power.value}')
+#        print(f'agg_hotwater_heating_power ({agg_hotwater_heating_power.size}): {agg_hotwater_heating_power.value}')
+#        print(f'agg_thermal_cooling_power ({agg_thermal_cooling_power.size}): {agg_thermal_cooling_power.value}')
+#        print()
+
         return load_sum, var_gen_sum, gen_sum, tot_net_ess, total_soe, agg_power_flows_in, \
             agg_power_flows_out, agg_steam_heating_power, agg_hotwater_heating_power, \
             agg_thermal_cooling_power
@@ -267,6 +260,9 @@ class MicrogridPOI(POI):
         obj_expression, constraint_list = super().optimization_problem(mask, power_in, power_out,
                                                                        steam_in, hotwater_in,
                                                                        cold_in, annuity_scalar)
+
+        agg_heat_consumed_by_chillers = cvx.Parameter(value=np.zeros(sum(mask)), shape=sum(mask), name='HeatUsedByChillerZero')
+
         # print parameters for each DER
         for der_instance in self.active_ders:
             print()
@@ -276,6 +272,10 @@ class MicrogridPOI(POI):
             print('{}: {:14} {:>5}'.format(der_instance.name, 'is_cold = ', str(der_instance.is_cold)))
             print('{}: {:14} {:>5}'.format(der_instance.name, 'is_electric = ', str(der_instance.is_electric)))
             print('{}: {:14} {:>5}'.format(der_instance.name, 'is_fuel = ', str(der_instance.is_fuel)))
+
+            # aggregate heat consumed by each chiller that is powered by heat
+            if der_instance.tag == 'Chiller':
+                agg_heat_consumed_by_chillers += der_instance.get_heat_consumed(mask)
 
         # print info in these function arguments
         print('\nopt_size: ', sum(mask))
@@ -294,15 +294,11 @@ class MicrogridPOI(POI):
         if self.site_hotwater_load is not None:
             if hotwater_in.variables():
                 TellUser.debug('adding hot water thermal power balance constraint')
-                constraint_list += [cvx.NonPos(-1 * hotwater_in + self.site_hotwater_load[mask])]
-                # FIXME:
-                # if a chiller is powered by heat, it will consume heat int he form of hotwater
-                # (it will increase the amount of hotwater in this constraint,
-                #   and therefore needs to have a negative sign here)
-                # loop through each chiller and add the
-                # aggregate all chillers that are powered by heat
-                # the new term is cold_in converted to heat, using cop
-                constraint_list += [cvx.NonPos(-1 * hotwater_in + cold_in + self.site_hotwater_load[mask])]
+                constraint_list += [cvx.NonPos(-1 * (hotwater_in + agg_heat_consumed_by_chillers) + self.site_hotwater_load[mask])]
+                # NOTE:
+                # if a chiller is powered by heat, it will consume heat in the form of hotwater
+                # it will increase the amount of hotwater in this constraint
+                # the new term aggregates cold_in converted to heat, using cop
 
         if self.site_cooling_load is not None:
             if cold_in.variables():
@@ -343,7 +339,13 @@ class MicrogridPOI(POI):
         results.loc[:, 'Total Storage Power (kW)'] = 0
         results.loc[:, 'Aggregated State of Energy (kWh)'] = 0
 
-        # FIXME: add content here for thermal loads?
+        # FIXME: add thermal loads
+        if self.site_cooling_load is not None:
+            results['THERMAL LOAD:' + ' Site Cooling Thermal Load (kW)'] = self.site_cooling_load
+        if self.site_hotwater_load is not None:
+            results['THERMAL LOAD:' + ' Site Hot Water Thermal Load (kW)'] = self.site_hotwater_load
+        if self.site_steam_load is not None:
+            results['THERMAL LOAD:' + ' Site Steam Thermal Load (kW)'] = self.site_steam_load
 
         for der in self.der_list:
             report_df = der.timeseries_report()
@@ -383,4 +385,20 @@ class MicrogridPOI(POI):
         results.loc[:, 'Net Load (kW)'] = \
             results.loc[:, 'Total Load (kW)'] - results.loc[:, 'Total Generation (kW)'] - \
             results.loc[:, 'Total Storage Power (kW)']
+
+#        # FIXME: do not allow any repeats in thermal load column names
+#        # this is a work-around to avoid duplicate thermal load reporting
+#        # from both Boiler and CHP
+#        cols = [k for k in results.columns]
+#        cols_to_drop = []
+#        labels = [
+#            'THERMAL LOAD: Site Steam Thermal Load (kW)',
+#            'THERMAL LOAD: Site Hot Water Thermal Load (kW)',
+#            'THERMAL LOAD: Site Cooling Thermal Load (kW)',
+#        ]
+#        for label in labels:
+#            ilist = [i for i, val in enumerate(cols) if val == label]
+#            cols_to_drop.append(ilist[1:])
+#        cols_to_drop_flat = [j for k in cols_to_drop for j in k]
+
         return results, monthly_data

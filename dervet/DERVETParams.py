@@ -55,7 +55,7 @@ class ParamsDER(Params):
     cba_input_error_raised = False
     cba_input_template = None
     # TODO add to this as needed --AE
-    dervet_only_der_list = ['CT', 'CHP', 'DieselGenset', 'ControllableLoad', 'EV', 'Chiller']
+    dervet_only_der_list = ['CT', 'CHP', 'DieselGenset', 'ControllableLoad', 'EV', 'Chiller', 'Boiler']
 
     @staticmethod
     def pandas_to_dict(model_parameter_pd):
@@ -145,6 +145,7 @@ class ParamsDER(Params):
         self.ElectricVehicle1 = self.read_and_validate('ElectricVehicle1')
         self.ElectricVehicle2 = self.read_and_validate('ElectricVehicle2')
         self.Chiller = self.read_and_validate('Chiller')
+        self.Boiler = self.read_and_validate('Boiler')
 
     @classmethod
     def bad_active_combo(cls):
@@ -156,7 +157,8 @@ class ParamsDER(Params):
         """
         slf = cls.template
         other_ders = any([len(slf.CHP), len(slf.CT), len(slf.DieselGenset),
-            len(slf.ElectricVehicle1), len(slf.ElectricVehicle2), len(slf.Chiller)])
+            len(slf.ElectricVehicle1), len(slf.ElectricVehicle2), len(slf.Chiller),
+            len(slf.Boiler)])
         return super().bad_active_combo(dervet=True, other_ders=other_ders)
 
     @classmethod
@@ -182,6 +184,7 @@ class ParamsDER(Params):
             'ElectricVehicle1': cls.read_and_validate_evaluation('ElectricVehicle1'),
             'ElectricVehicle2': cls.read_and_validate_evaluation('ElectricVehicle2'),
             'Chiller': cls.read_and_validate_evaluation('Chiller'),
+            'Boiler': cls.read_and_validate_evaluation('Boiler'),
             # 'ControllableLoad': cls.read_and_validate_evaluation('ControllableLoad')
         }
 
@@ -661,6 +664,38 @@ class ParamsDER(Params):
                     if chiller_input.get('site_cooling_load') is None:
                         # report error when thermal load does not have a cooling load
                         self.record_input_error("Chiller is missing a site cooling load ('Site Cooling Thermal Load (tons)' from timeseries data input")
+
+        if len(self.Boiler):
+            if not self.Scenario['incl_thermal_load']:
+                TellUser.warning('with incl_thermal_load = 0, Boiler will ignore any site thermal loads.')
+            for id_str, boiler_inputs in self.Boiler.items():
+                boiler_inputs.update({'dt': dt})
+
+                # add time series, monthly data, and any scenario case parameters to boiler parameter dictionary
+                if self.Scenario['incl_thermal_load']:
+                    try:  # TODO: we allow for multiple boilers to be defined -- and if there were -- then they all would share the same data. Is this correct? --HN
+                        boiler_inputs.update({'site_steam_load': KW_PER_MMBTU_HR * time_series.loc[:, 'Site Steam Thermal Load (MMBtu/hr)']})
+                    except:
+                        pass
+                    try:
+                        boiler_inputs.update({'site_hotwater_load': KW_PER_MMBTU_HR * time_series.loc[:, 'Site Hot Water Thermal Load (MMBtu/hr)']})
+                    except:
+                        pass
+                    if boiler_inputs.get('site_steam_load') is None and boiler_inputs.get('site_hotwater_load') is None:
+                        # report error when thermal load has neither steam nor hotwater components
+                        self.record_input_error("Boiler is missing a site heating load ('Site Steam Thermal Load (MMBtu/hr)' and/or 'Site Hot Water Thermal Load (MMBtu/hr)') from timeseries data input")
+                    elif boiler_inputs.get('site_steam_load') is None or boiler_inputs.get('site_hotwater_load') is None:
+                        # when only one thermal load exists (steam or hotwater), make the other one with zeroes and warn
+                        if boiler_inputs.get('site_steam_load') is None:
+                            all_zeroes = boiler_inputs['site_hotwater_load'].copy()
+                            all_zeroes.values[:] = 0
+                            boiler_inputs.update({'site_steam_load': all_zeroes})
+                            TellUser.warning('since "site steam thermal load" data were not input, we create a time series with all zeroes for it')
+                        if boiler_inputs.get('site_hotwater_load') is None:
+                            all_zeroes = boiler_inputs['site_steam_load'].copy()
+                            all_zeroes.values[:] = 0
+                            boiler_inputs.update({'site_hotwater_load': all_zeroes})
+                            TellUser.warning('since "site hotwater thermal load" data were not input, we create a time series with all zeroes for it')
 
         super().load_technology(names_list)
 

@@ -157,15 +157,17 @@ class CHP(CT):
 
         results[tech_id + ' Steam Generation (kW)'] = self.variables_df['steam']
         results[tech_id + ' Hot Water Generation (kW)'] = self.variables_df['hotwater']
-        if self.site_thermal_load_exists:
-            results[tech_id + ' Site Steam Thermal Load (kW)'] = self.site_steam_load
-            results[tech_id + ' Site Hot Water Thermal Load (kW)'] = self.site_hotwater_load
+        #if self.site_thermal_load_exists:
+        #    results['THERMAL LOAD:' + ' Site Steam Thermal Load (kW)'] = self.site_steam_load
+        #    results['THERMAL LOAD:' + ' Site Hot Water Thermal Load (kW)'] = self.site_hotwater_load
 
         return results
 
     def objective_function(self, mask, annuity_scalar=1):
 
         costs = super().objective_function(mask, annuity_scalar)
+
+        # FIXME: add fuel costs here?
 
 #        # add startup objective costs
 #        if self.startup:

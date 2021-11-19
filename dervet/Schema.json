@@ -1483,6 +1483,135 @@
                 },
                 "type": "load"
             },
+            "Boiler": {
+                "type": "thermal",
+                "keys": {
+                    "name": {
+                        "cba": "n",
+                        "type": "string"
+                    },
+                    "macrs_term": {
+                        "allowed_values": "3|5|7|10|15|20|25|27.5|39",
+                        "cba": "n",
+                        "type": "float"
+                    },
+                    "startup_time": {
+                        "cba": "n",
+                        "min": "0",
+                        "type": "int",
+                        "unit": "minutes"
+                    },
+                    "power_source": {
+                        "allowed_values": "electricity|natural gas",
+                        "cba": "n",
+                        "type": "string"
+                    },
+                    "coefficient_of_performance": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "ratio"
+                    },
+                    "fixed_om_cost": {
+                        "cba": "y",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "$/year"
+                    },
+                    "max_rated_capacity": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "MMBtu/boiler"
+                    },
+                    "min_rated_capacity": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "MMBtu/boiler"
+                    },
+                    "rated_capacity": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "MMBtu/boiler"
+                    },
+                    "ccost": {
+                        "cba": "y",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "$/boiler"
+                    },
+                    "ccost_MMBtu": {
+                        "cba": "y",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "$/MMBtu-boiler"
+                    },
+                    "construction_year": {
+                        "cba": "n",
+                        "type": "Period",
+                        "unit": "year"
+                    },
+                    "operation_year": {
+                        "cba": "n",
+                        "type": "Period",
+                        "unit": "year"
+                    },
+                    "decommissioning_cost": {
+                        "cba": "n",
+                        "type": "float",
+                        "unit": "$"
+                    },
+                    "salvage_value": {
+                        "cba": "n",
+                        "allowed_values": "sunk cost|linear salvage value|BOUND",
+                        "type": "string/int"
+                    },
+                    "expected_lifetime": {
+                        "cba": "n",
+                        "type": "int",
+                        "unit": "years"
+                    },
+                    "replaceable": {
+                        "type": "bool",
+                        "allowed_values": "1|0"
+                    },
+                    "rcost": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "$/boiler"
+                    },
+                    "rcost_kW": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "$/kW"
+                    },
+                    "acr": {
+                        "cba": "n",
+                        "max": "100.0",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "%"
+                    },
+                    "ter": {
+                        "cba": "n",
+                        "max": "100.0",
+                        "min": "-100.0",
+                        "type": "float",
+                        "unit": "%"
+                    },
+                    "ecc%": {
+                        "cba": "n",
+                        "max": "100.0",
+                        "min": "-100.0",
+                        "type": "float",
+                        "unit": "%"
+                    }
+                }
+            },
             "Chiller": {
                 "type": "thermal",
                 "keys": {
@@ -1516,7 +1645,7 @@
                         "cba": "y",
                         "min": "0.0",
                         "type": "float",
-                        "unit": "$/ton-year"
+                        "unit": "$/year"
                     },
                     "max_rated_capacity": {
                         "cba": "n",

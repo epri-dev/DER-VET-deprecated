@@ -28,15 +28,15 @@ Copyright (c) 2021, Electric Power Research Institute
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 """
-Chiller Sizing class
+Boiler Sizing class
 
-A Chiller can be powered by:
-  - electricity (electric chiller)
-  - natural gas (natural gas powered chiller)
-  - heat (from a local heat source: CHP, boiler, etc.)
+A Boiler can be powered by:
+  - electricity (electric Boiler, from any other DER)
+  - natural gas (natural gas powered Boiler)
+  - NOOOOOO------ heat (from a local heat source: CHP, boiler, etc.)
 
-A Chiller can serve a cooling load.
-A Chiller cannot serve a heating load, nor an electric load.
+A Boiler can serve a heating load (hotwater and/or steam)
+A Boiler cannot serve a cooling load, nor an electric load.
 """
 
 __author__ = 'Andrew Etringer'
@@ -56,8 +56,8 @@ from dervet.MicrogridDER.ContinuousSizing import ContinuousSizing
 from storagevet.ErrorHandling import *
 
 
-class Chiller(DER, ContinuousSizing, DERExtension):
-    """ A Chiller technology, with sizing optimization
+class Boiler(DER, ContinuousSizing, DERExtension):
+    """ A Boiler technology, with sizing optimization
 
     """
 
@@ -73,54 +73,51 @@ class Chiller(DER, ContinuousSizing, DERExtension):
         ContinuousSizing.__init__(self, params)
         DERExtension.__init__(self, params)
 
-        KW_PER_TON = 3.5168525  # unit conversion (1 ton in kW)
+        KW_PER_MMBTU_HR = 293.1 # unit conversion (1 MMBtu/hr in kW)
 
         self.technology_type = 'Thermal'
-        self.tag = 'Chiller'
+        self.tag = 'Boiler'
 
         # cop is the ratio of cooling provided to the power input
         #   ( Btu/hr of cooling / Btu/hr of [electricity|natural gas|heat] )
         self.cop = params['coefficient_of_performance']
-        self.power_source = params['power_source']  # electricity, natural gas, heat
+        self.power_source = params['power_source']  # electricity, natural gas
 
-        self.rated_power = KW_PER_TON * params['rated_capacity']  # tons/chiller
+        self.rated_power = KW_PER_MMBTU_HR * params['rated_capacity']  # MMBtu/Boiler
 
-        self.ccost = params['ccost']  # $/chiller
-        self.ccost_kW = params['ccost_ton'] / KW_PER_TON  # $/tons-chiller
+        self.ccost = params['ccost']  # $/Boiler
+        self.ccost_kW = params['ccost_MMBtu'] / KW_PER_MMBTU_HR  # $/MMBtu-Boiler
         self.capital_cost_function = [self.ccost, self.ccost_kW]
 
-        self.fixed_om = params['fixed_om_cost'] / KW_PER_TON  # $ / ton-year
+        self.fixed_om = params['fixed_om_cost'] / KW_PER_MMBTU_HR  # $ / MMBtu-year
 
-        # since there is no min_power input for chillers, set the number of chillers to 1
-        self.n = 1 # number of chillers (integer)
+        # since there is no min_power input for Boilers, set the number of Boilers to 1
+        self.n = 1 # number of Boilers (integer)
 
         # let the power_source input control the fuel_type
         if self.power_source == 'natural gas':
-            # a natural-gas-powered chiller
+            # FIXME: this is broken
+            # a natural-gas-powered Boiler
             self.fuel_type = 'gas'
             self.is_fuel = True
-        elif self.power_source == 'heat':
-            # a chiller powered by a local heat source (CHP, Boiler, etc.)
-            self.is_hot = True
-            self.fuel_type = None
-            self.is_fuel = False
         elif self.power_source == 'electricity':
-            # an electric chiller
+            # an electric Boiler
             self.is_electric = True
             self.fuel_type = None
             self.is_fuel = False
 
-        self.is_cold = True
+        self.is_hot = True
 
-        # For now, no, chiller just serves the cooling load and consumes some power to do so.
-        # Since the cooling load is fixed, the chiller has no opportunity to provide market services.
+        # For now, no, Boiler just serves the heating load and consumes some power to do so.
+        # Since the heating load is fixed, the Boiler has no opportunity to provide market services.
         self.can_participate_in_market_services = False
 
         # time series inputs
-        self.site_cooling_load = params.get('site_cooling_load')    # input as tons, but converted to kW in DERVETParams.py
+        self.site_hotwater_load = params.get('site_hotwater_load')    # input as MMBtu/hr, but converted to kW in DERVETParams.py
+        self.site_steam_load = params.get('site_steam_load')    # input as MMBtu/hr, but converted to kW in DERVETParams.py
 
-        self.max_rated_power = KW_PER_TON * params['max_rated_capacity']  # tons/chiller
-        self.min_rated_power = KW_PER_TON * params['min_rated_capacity'] # tons/chiller
+        self.max_rated_power = KW_PER_MMBTU_HR * params['max_rated_capacity']  # MMBtu/Boiler
+        self.min_rated_power = KW_PER_MMBTU_HR * params['min_rated_capacity'] # MMBtu/Boiler
         if not self.rated_power:
             self.rated_power = cvx.Variable(integer=True, name=f'{self.name} rating')
             self.size_constraints += [cvx.NonPos(-self.rated_power)]
@@ -130,53 +127,62 @@ class Chiller(DER, ContinuousSizing, DERExtension):
                 self.size_constraints += [cvx.NonPos(self.rated_power - self.max_rated_power)]
 
     def grow_drop_data(self, years, frequency, load_growth):
-        if self.site_cooling_load is not None:
-            self.site_cooling_load = Lib.fill_extra_data(self.site_cooling_load, years, load_growth, frequency)
-            self.site_cooling_load = Lib.drop_extra_data(self.site_cooling_load, years)
+        if self.site_hotwater_load is not None:
+            self.site_hotwater_load = Lib.fill_extra_data(self.site_hotwater_load, years, load_growth, frequency)
+            self.site_hotwater_load = Lib.drop_extra_data(self.site_hotwater_load, years)
+        if self.site_steam_load is not None:
+            self.site_steam_load = Lib.fill_extra_data(self.site_steam_load, years, load_growth, frequency)
+            self.site_steam_load = Lib.drop_extra_data(self.site_steam_load, years)
 
     def initialize_variables(self, size):
+        # TODO -- add rated_capacity sizing optimization variable here, when sizing
+        # NOTE: this is handled by size_constraints
         self.variables_dict = {
-            'cold': cvx.Variable(shape=size, name=f'{self.name}-coldP', nonneg=True),
+            'steam': cvx.Variable(shape=size, name=f'{self.name}-steamP', nonneg=True),
+            'hotwater': cvx.Variable(shape=size, name=f'{self.name}-hotwaterP', nonneg=True),
         }
 
     def get_charge(self, mask):
         # when powered by electricity, this DER will consume some electrical load
-        #   this is cooling-load / cop
+        #   this is heating-load / cop
         if self.is_electric:
             # FIXME: which one of these is correct?
-#            return cvx.Parameter(value=self.site_cooling_load[mask].values / self.cop, shape=sum(mask), name=f'{self.name}-elecP')
-            return self.variables_dict['cold'] / self.cop
+            #return cvx.Parameter(value=self.site_hotwater_load[mask].values / self.cop, shape=sum(mask), name=f'{self.name}-elecP')
+            #return self.variables_dict['hotwater'] / self.cop
+            return (self.variables_dict['steam'] + self.variables_dict['hotwater']) / self.cop
         else:
             # returns all zeroes (from base class)
             return super().get_charge(mask)
 
-    def get_heat_consumed(self, mask):
-        if self.is_hot:
-            return self.variables_dict['cold'] / self.cop
-        else:
-            return cvx.Parameter(value=np.zeros(sum(mask)), shape=sum(mask), name=f'{self.name}-Zero')
-
     def constraints(self, mask, **kwargs):
         constraint_list = super().constraints(mask)
-        cold = self.variables_dict['cold']
+        steam = self.variables_dict['steam']
+        hotwater = self.variables_dict['hotwater']
 
-        # limit the cold power of the chiller to at most its rated power
-        constraint_list += [cvx.NonPos(cold - self.rated_power)]
+        # limit the heating power of the Boiler to at most its rated power
+        constraint_list += [cvx.NonPos(steam + hotwater - self.rated_power)]
 
         constraint_list += self.size_constraints
         return constraint_list
 
-    def get_cold_generated(self, mask):
+    def get_steam_generated(self, mask):
         # FIXME: ? fix this description
-        # thermal power is recovered in a Chiller whenever electric power is being generated
+        # thermal power is recovered in a Boiler whenever electric power is being generated
         # it is proportional to the electric power generated at a given time
-        return self.variables_dict['cold']
+        return self.variables_dict['steam']
+
+    def get_hotwater_generated(self, mask):
+        # FIXME: ? fix this description
+        # thermal power is recovered in a Boiler whenever electric power is being generated
+        # it is proportional to the electric power generated at a given time
+        return self.variables_dict['hotwater']
 
     def objective_function(self, mask, annuity_scalar=1):
+        # TODO -- this needs fixes
         costs = super().objective_function(mask, annuity_scalar)
         costs.update(self.sizing_objective())
 
-        total_out = self.variables_dict['cold']
+        total_out = self.variables_dict['steam'] + self.variables_dict['hotwater']
 
         costs.update({
             self.name + ' fixed': self.fixed_om * annuity_scalar,
@@ -185,17 +191,13 @@ class Chiller(DER, ContinuousSizing, DERExtension):
 
         print(f'{self.name}--power_source: {self.power_source}')
         #if self.power_source == 'electricity':
-        #    # the chiller consumes electricity
+        #    # the boilder consumes electricity
         #    # this manifests as an increase in the electricity bill
-        #    # agg_power_flows_in accumulates elec power from a chiller with get_charge()
+        #    # agg_power_flows_in accumulates elec power from a boiler with get_charge()
         if self.power_source == 'natural gas':
             # add fuel cost in $/kWh
             fuel_exp = cvx.sum(total_out * self.cop * self.fuel_cost * self.dt * annuity_scalar)
             costs.update({self.name + ' fuel_cost': fuel_exp})
-        #elif self.power_source == 'heat':
-        #    # the chiller consumes heat
-        #    # the fuel cost should show up in the boiler/CHP's fuel cost output.
-        #    # add to thermal energy balance (hotwater) in dervetPOI
 
         return costs
 
@@ -257,7 +259,7 @@ class Chiller(DER, ContinuousSizing, DERExtension):
     #def sizing_error(self):
         # handled in the parent class  (will NOT error)
         # min_power is not specified with this technology,
-        #   meaning we allow chillers to operate anywhere between 0 tons and their rated capacity
+        #   meaning we allow Boilers to operate anywhere between 0 MMBtu and their rated capacity
 
 #    def replacement_cost(self):
 #        """ Returns: the cost of replacing this DER
@@ -283,9 +285,10 @@ class Chiller(DER, ContinuousSizing, DERExtension):
         results = super().timeseries_report()
         # results = pd.DataFrame(index=self.variables_df.index)
 
-        results[tech_id + ' Cold Generation (kW)'] = self.variables_df['cold']
-        #if self.site_cooling_load is not None:
-        #    results['THERMAL LOAD:' + ' Site Cooling Thermal Load (kW)'] = self.site_cooling_load
+        results[tech_id + ' Steam Generation (kW)'] = self.variables_df['steam']
+        results[tech_id + ' Hot Water Generation (kW)'] = self.variables_df['hotwater']
+        #results['THERMAL LOAD:' + ' Site Steam Thermal Load (kW)'] = self.site_steam_load
+        #results['THERMAL LOAD:' + ' Site Hot Water Thermal Load (kW)'] = self.site_hotwater_load
 
         return results
 
