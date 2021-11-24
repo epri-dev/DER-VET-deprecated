@@ -57,22 +57,3 @@ class CT(RotatingGeneratorSizing):
 
         self.tag = 'CT'
         self.heat_rate = 1e-3 * params['heat_rate'] # MMBtu/MWh ---> MMBtu/kWh
-
-    def objective_function(self, mask, annuity_scalar=1):
-        costs = super().objective_function(mask, annuity_scalar)
-
-        # FIXME: remove this completely?
-        return costs
-
-    def timeseries_report(self):
-        """ Summaries the optimization results for this DER.
-
-        Returns: A timeseries dataframe with user-friendly column headers that summarize the results
-            pertaining to this instance
-
-        """
-        tech_id = self.unique_tech_id()
-        results = super().timeseries_report()
-
-        # FIXME: remove this completely?
-        return results

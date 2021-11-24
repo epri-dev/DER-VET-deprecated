@@ -186,6 +186,12 @@ class MicrogridPOI(POI):
                 load_sum += der_inst.get_charge(mask)
                 # total_soe += der_instance.get_state_of_energy(mask)
 
+            if der_inst.tag in ['Chiller', 'Boiler']:
+                # FIXME:
+                # if these technologies are electric, they add to load_sum,
+                # if not, get_charge() will return zeroes
+                load_sum += der_inst.get_charge(mask)
+
             # thermal power recovered: hot (steam/hotwater) and cold
             #if der_inst.is_hot:
             if der_inst.tag in ['CHP', 'Boiler']:
@@ -261,7 +267,7 @@ class MicrogridPOI(POI):
                                                                        steam_in, hotwater_in,
                                                                        cold_in, annuity_scalar)
 
-        agg_heat_consumed_by_chillers = cvx.Parameter(value=np.zeros(sum(mask)), shape=sum(mask), name='HeatUsedByChillerZero')
+        agg_heat_consumed_by_chillers = cvx.Parameter(value=np.zeros(sum(mask)), shape=sum(mask), name='HeatUsedByChillersZero')
 
         # print parameters for each DER
         for der_instance in self.active_ders:
@@ -339,7 +345,6 @@ class MicrogridPOI(POI):
         results.loc[:, 'Total Storage Power (kW)'] = 0
         results.loc[:, 'Aggregated State of Energy (kWh)'] = 0
 
-        # FIXME: add thermal loads
         if self.site_cooling_load is not None:
             results['THERMAL LOAD:' + ' Site Cooling Thermal Load (kW)'] = self.site_cooling_load
         if self.site_hotwater_load is not None:
@@ -385,20 +390,5 @@ class MicrogridPOI(POI):
         results.loc[:, 'Net Load (kW)'] = \
             results.loc[:, 'Total Load (kW)'] - results.loc[:, 'Total Generation (kW)'] - \
             results.loc[:, 'Total Storage Power (kW)']
-
-#        # FIXME: do not allow any repeats in thermal load column names
-#        # this is a work-around to avoid duplicate thermal load reporting
-#        # from both Boiler and CHP
-#        cols = [k for k in results.columns]
-#        cols_to_drop = []
-#        labels = [
-#            'THERMAL LOAD: Site Steam Thermal Load (kW)',
-#            'THERMAL LOAD: Site Hot Water Thermal Load (kW)',
-#            'THERMAL LOAD: Site Cooling Thermal Load (kW)',
-#        ]
-#        for label in labels:
-#            ilist = [i for i, val in enumerate(cols) if val == label]
-#            cols_to_drop.append(ilist[1:])
-#        cols_to_drop_flat = [j for k in cols_to_drop for j in k]
 
         return results, monthly_data

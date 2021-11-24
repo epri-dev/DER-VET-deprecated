@@ -101,7 +101,7 @@ class CHP(CT):
         #   and defined by electric_heat_ratio
         constraint_list += [cvx.Zero(elec - self.electric_heat_ratio * (steam  + hotwater))]
 
-        # to ensure that CHP never produces more steam than it can
+        # to ensure that CHP never produces more steam than it can (no excess steam)
         if not self.steam_only and not self.hotwater_only:
             constraint_list += [cvx.NonPos(steam - self.max_steam_ratio * hotwater)]
 
@@ -166,8 +166,6 @@ class CHP(CT):
     def objective_function(self, mask, annuity_scalar=1):
 
         costs = super().objective_function(mask, annuity_scalar)
-
-        # FIXME: add fuel costs here?
 
 #        # add startup objective costs
 #        if self.startup:

@@ -55,6 +55,7 @@ from dervet.MicrogridDER.DERExtension import DERExtension
 from dervet.MicrogridDER.ContinuousSizing import ContinuousSizing
 from storagevet.ErrorHandling import *
 
+KW_PER_MMBTU_HR = 293.1 # unit conversion (1 MMBtu/hr in kW)
 
 class Boiler(DER, ContinuousSizing, DERExtension):
     """ A Boiler technology, with sizing optimization
@@ -72,8 +73,6 @@ class Boiler(DER, ContinuousSizing, DERExtension):
         DER.__init__(self, params)
         ContinuousSizing.__init__(self, params)
         DERExtension.__init__(self, params)
-
-        KW_PER_MMBTU_HR = 293.1 # unit conversion (1 MMBtu/hr in kW)
 
         self.technology_type = 'Thermal'
         self.tag = 'Boiler'
@@ -96,7 +95,6 @@ class Boiler(DER, ContinuousSizing, DERExtension):
 
         # let the power_source input control the fuel_type
         if self.power_source == 'natural gas':
-            # FIXME: this is broken
             # a natural-gas-powered Boiler
             self.fuel_type = 'gas'
             self.is_fuel = True
@@ -144,10 +142,8 @@ class Boiler(DER, ContinuousSizing, DERExtension):
 
     def get_charge(self, mask):
         # when powered by electricity, this DER will consume some electrical load
-        #   this is heating-load / cop
         if self.is_electric:
-            # FIXME: which one of these is correct?
-            #return cvx.Parameter(value=self.site_hotwater_load[mask].values / self.cop, shape=sum(mask), name=f'{self.name}-elecP')
+            TellUser.info(f'This electric Boiler ({self.name}) adds to the electrical load')
             #return self.variables_dict['hotwater'] / self.cop
             return (self.variables_dict['steam'] + self.variables_dict['hotwater']) / self.cop
         else:
@@ -166,19 +162,12 @@ class Boiler(DER, ContinuousSizing, DERExtension):
         return constraint_list
 
     def get_steam_generated(self, mask):
-        # FIXME: ? fix this description
-        # thermal power is recovered in a Boiler whenever electric power is being generated
-        # it is proportional to the electric power generated at a given time
         return self.variables_dict['steam']
 
     def get_hotwater_generated(self, mask):
-        # FIXME: ? fix this description
-        # thermal power is recovered in a Boiler whenever electric power is being generated
-        # it is proportional to the electric power generated at a given time
         return self.variables_dict['hotwater']
 
     def objective_function(self, mask, annuity_scalar=1):
-        # TODO -- this needs fixes
         costs = super().objective_function(mask, annuity_scalar)
         costs.update(self.sizing_objective())
 
@@ -186,17 +175,17 @@ class Boiler(DER, ContinuousSizing, DERExtension):
 
         costs.update({
             self.name + ' fixed': self.fixed_om * annuity_scalar,
-            self.name + ' variable': cvx.sum(self.variable_om * self.dt * annuity_scalar * total_out)
+            #self.name + ' variable': cvx.sum(self.variable_om * self.dt * annuity_scalar * total_out)
         })
 
         print(f'{self.name}--power_source: {self.power_source}')
         #if self.power_source == 'electricity':
-        #    # the boilder consumes electricity
+        #    # the boiler consumes electricity
         #    # this manifests as an increase in the electricity bill
         #    # agg_power_flows_in accumulates elec power from a boiler with get_charge()
         if self.power_source == 'natural gas':
-            # add fuel cost in $/kWh
-            fuel_exp = cvx.sum(total_out * self.cop * self.fuel_cost * self.dt * annuity_scalar)
+            # add fuel cost in $
+            fuel_exp = cvx.sum(total_out * (1/self.cop) * (1/KW_PER_MMBTU_HR) * self.fuel_cost * self.dt * annuity_scalar)
             costs.update({self.name + ' fuel_cost': fuel_exp})
 
         return costs
@@ -293,12 +282,43 @@ class Boiler(DER, ContinuousSizing, DERExtension):
         return results
 
     def proforma_report(self, apply_inflation_rate_func, fill_forward_func, results):
-        #super().proforma_report()
-        # TODO -- fill this in, using an example from the cba code
-        # FIXME: is this right?
-        if not self.zero_column_name():
-            return None
+        """ Calculates the proforma that corresponds to participation in this value stream
 
-        pro_forma = pd.DataFrame({self.zero_column_name(): -self.get_capex(solution=True)}, index=['CAPEX Year'])
+        Args:
+            apply_inflation_rate_func:
+            fill_forward_func:
+            results (pd.DataFrame):
+
+        Returns: A DateFrame of with each year in opt_year as the index and
+            the corresponding value this stream provided.
+
+        """
+        pro_forma = super().proforma_report(apply_inflation_rate_func, fill_forward_func, results)
+        tech_id = self.unique_tech_id()
+        if self.variables_df.empty:
+            return pro_forma
+
+        optimization_years = self.variables_df.index.year.unique()
+        hot = self.variables_df['hotwater'] + self.variables_df['steam']
+        # fixed om costs
+        om_costs = pd.DataFrame()
+        # fuel costs
+        fuel_costs = pd.DataFrame()
+        fuel_col_name = tech_id + ' Fuel Costs'
+        for year in optimization_years:
+            hot_sub = hot.loc[hot.index.year == year]
+            # add fuel costs
+            if self.is_fuel:
+                fuel_costs.loc[pd.Period(year=year, freq='y'), fuel_col_name] = -np.sum(self.fuel_cost * (1/KW_PER_MMBTU_HR) * self.dt * hot_sub * (1/self.cop))
+            else:
+                fuel_costs.loc[pd.Period(year=year, freq='y'), fuel_col_name] = 0.0
+            # add fixed o&m costs
+            om_costs.loc[pd.Period(year=year, freq='y'), self.fixed_column_name()] = -self.fixed_om
+        # fill forward
+        fuel_costs = fill_forward_func(fuel_costs, None)
+        om_costs = fill_forward_func(om_costs, None, is_om_cost=True)
+        # append with super class's proforma
+        # NOTE: capex goes away with this action
+        pro_forma = pd.concat([pro_forma, om_costs, fuel_costs], axis=1)
 
         return pro_forma
