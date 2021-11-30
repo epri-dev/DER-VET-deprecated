@@ -383,7 +383,8 @@ class MicrogridPOI(POI):
                     if der.tag == 'ElectricVehicle1':
                         results.loc[:, 'Aggregated State of Energy (kWh)'] += \
                             results[f'{der.unique_tech_id()} State of Energy (kWh)']
-                if der.is_hot:
+                #if der.is_hot:
+                if der.tag in ['CHP', 'Boiler']:
                     # thermal heating generation
                     results.loc[:, 'Total Thermal Hot Water Generation (kW)'] += \
                         results[f'{der.unique_tech_id()} Hot Water Generation (kW)']
