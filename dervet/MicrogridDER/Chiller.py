@@ -278,7 +278,7 @@ class Chiller(DER, DERExtension, ContinuousSizing):
         results = super().timeseries_report()
         # results = pd.DataFrame(index=self.variables_df.index)
 
-        results[tech_id + ' Cold Generation (kW)'] = self.variables_df['cold']
+        results[tech_id + ' Cooling Generation (kW)'] = self.variables_df['cold']
         #if self.site_cooling_load is not None:
         #    results['THERMAL LOAD:' + ' Site Cooling Thermal Load (kW)'] = self.site_cooling_load
 

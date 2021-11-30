@@ -345,12 +345,16 @@ class MicrogridPOI(POI):
         results.loc[:, 'Total Storage Power (kW)'] = 0
         results.loc[:, 'Aggregated State of Energy (kWh)'] = 0
 
+        # thermal loads and initialize thermal generation totals
         if self.site_cooling_load is not None:
             results['THERMAL LOAD:' + ' Site Cooling Thermal Load (kW)'] = self.site_cooling_load
+            results.loc[:, 'Total Thermal Cooling Generation (kW)'] = 0
         if self.site_hotwater_load is not None:
             results['THERMAL LOAD:' + ' Site Hot Water Thermal Load (kW)'] = self.site_hotwater_load
+            results.loc[:, 'Total Thermal Hot Water Generation (kW)'] = 0
         if self.site_steam_load is not None:
             results['THERMAL LOAD:' + ' Site Steam Thermal Load (kW)'] = self.site_steam_load
+            results.loc[:, 'Total Thermal Steam Generation (kW)'] = 0
 
         for der in self.der_list:
             report_df = der.timeseries_report()
@@ -379,6 +383,16 @@ class MicrogridPOI(POI):
                     if der.tag == 'ElectricVehicle1':
                         results.loc[:, 'Aggregated State of Energy (kWh)'] += \
                             results[f'{der.unique_tech_id()} State of Energy (kWh)']
+                if der.is_hot:
+                    # thermal heating generation
+                    results.loc[:, 'Total Thermal Hot Water Generation (kW)'] += \
+                        results[f'{der.unique_tech_id()} Hot Water Generation (kW)']
+                    results.loc[:, 'Total Thermal Steam Generation (kW)'] += \
+                        results[f'{der.unique_tech_id()} Steam Generation (kW)']
+                if der.is_cold:
+                    # thermal cooling generation
+                    results.loc[:, 'Total Thermal Cooling Generation (kW)'] += \
+                        results[f'{der.unique_tech_id()} Cooling Generation (kW)']
             report = der.monthly_report()
             monthly_data = pd.concat([monthly_data, report], axis=1, sort=False)
         # assumes the orginal net load only does not contain the Storage system
@@ -390,5 +404,10 @@ class MicrogridPOI(POI):
         results.loc[:, 'Net Load (kW)'] = \
             results.loc[:, 'Total Load (kW)'] - results.loc[:, 'Total Generation (kW)'] - \
             results.loc[:, 'Total Storage Power (kW)']
+        # net thermal loads
+        for thermal_load in ['Hot Water', 'Steam', 'Cooling']:
+            results.loc[:, f'Net Thermal {thermal_load} Load (kW)'] = \
+                results.loc[:, f'THERMAL LOAD: Site {thermal_load} Thermal Load (kW)'] - \
+                results.loc[:, f'Total Thermal {thermal_load} Generation (kW)']
 
         return results, monthly_data
