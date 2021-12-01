@@ -387,18 +387,21 @@ class MicrogridPOI(POI):
                         results.loc[:, 'Aggregated State of Energy (kWh)'] += \
                             results[f'{der.unique_tech_id()} State of Energy (kWh)']
                 if der.tag == 'Chiller' and der.is_hot:
-                    # an absorption chiller reduces the total thermal hot water load by its generation (Cooling)
+                    # an absorption chiller increases the total thermal hot water load
+                    # by its generation (Cooling) divided by its COP
                     results.loc[:, 'Total Thermal Hot Water Load (kW)'] += \
-                        results[f'{der.unique_tech_id()} Cooling Generation (kW)']
+                        results[f'{der.unique_tech_id()} Cooling Generation (kW)'] / der.cop
                 if der.tag == 'Chiller' and der.is_electric:
-                    # an electric chiller adds to total electrical load by its generation (Cooling)
+                    # an electric chiller adds to total electrical load
+                    # by its generation (Cooling) divided by its COP
                     results.loc[:, 'Total Load (kW)'] += \
-                        results[f'{der.unique_tech_id()} Cooling Generation (kW)']
+                        results[f'{der.unique_tech_id()} Cooling Generation (kW)'] / der.cop
                 if der.tag == 'Boiler' and der.is_electric:
-                    # an electric boiler adds to total electrical load by its generation (Hot Water + Steam)
+                    # an electric boiler adds to total electrical load
+                    # by its generation (Hot Water + Steam) divided by its COP
                     results.loc[:, 'Total Load (kW)'] += \
-                        results[f'{der.unique_tech_id()} Hot Water Generation (kW)'] + \
-                        results[f'{der.unique_tech_id()} Steam Generation (kW)']
+                        ( results[f'{der.unique_tech_id()} Hot Water Generation (kW)'] + \
+                        results[f'{der.unique_tech_id()} Steam Generation (kW)'] ) / der.cop
                 #if der.is_hot:
                 if der.tag in ['CHP', 'Boiler']:
                     # thermal heating generation
