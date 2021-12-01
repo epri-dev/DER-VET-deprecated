@@ -383,6 +383,15 @@ class MicrogridPOI(POI):
                     if der.tag == 'ElectricVehicle1':
                         results.loc[:, 'Aggregated State of Energy (kWh)'] += \
                             results[f'{der.unique_tech_id()} State of Energy (kWh)']
+                if der.tag == 'Chiller' and der.is_electric:
+                    # an electric chiller adds to total electrical load by its generation (Cooling)
+                    results.loc[:, 'Total Load (kW)'] += \
+                        results[f'{der.unique_tech_id()} Cooling Generation (kW)']
+                if der.tag == 'Boiler' and der.is_electric:
+                    # an electric boiler adds to total electrical load by its generation (Hot Water + Steam)
+                    results.loc[:, 'Total Load (kW)'] += \
+                        results[f'{der.unique_tech_id()} Hot Water Generation (kW)'] + \
+                        results[f'{der.unique_tech_id()} Steam Generation (kW)']
                 #if der.is_hot:
                 if der.tag in ['CHP', 'Boiler']:
                     # thermal heating generation
