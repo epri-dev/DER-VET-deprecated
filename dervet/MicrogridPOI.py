@@ -349,12 +349,15 @@ class MicrogridPOI(POI):
         if self.site_cooling_load is not None:
             results['THERMAL LOAD:' + ' Site Cooling Thermal Load (kW)'] = self.site_cooling_load
             results.loc[:, 'Total Thermal Cooling Generation (kW)'] = 0
+            results.loc[:, 'Total Thermal Cooling Load (kW)'] = self.site_cooling_load
         if self.site_hotwater_load is not None:
             results['THERMAL LOAD:' + ' Site Hot Water Thermal Load (kW)'] = self.site_hotwater_load
             results.loc[:, 'Total Thermal Hot Water Generation (kW)'] = 0
+            results.loc[:, 'Total Thermal Hot Water Load (kW)'] = self.site_hotwater_load
         if self.site_steam_load is not None:
             results['THERMAL LOAD:' + ' Site Steam Thermal Load (kW)'] = self.site_steam_load
             results.loc[:, 'Total Thermal Steam Generation (kW)'] = 0
+            results.loc[:, 'Total Thermal Steam Load (kW)'] = self.site_steam_load
 
         for der in self.der_list:
             report_df = der.timeseries_report()
@@ -383,6 +386,10 @@ class MicrogridPOI(POI):
                     if der.tag == 'ElectricVehicle1':
                         results.loc[:, 'Aggregated State of Energy (kWh)'] += \
                             results[f'{der.unique_tech_id()} State of Energy (kWh)']
+                if der.tag == 'Chiller' and der.is_hot:
+                    # an absorption chiller reduces the total thermal hot water load by its generation (Cooling)
+                    results.loc[:, 'Total Thermal Hot Water Load (kW)'] += \
+                        results[f'{der.unique_tech_id()} Cooling Generation (kW)']
                 if der.tag == 'Chiller' and der.is_electric:
                     # an electric chiller adds to total electrical load by its generation (Cooling)
                     results.loc[:, 'Total Load (kW)'] += \
@@ -417,7 +424,7 @@ class MicrogridPOI(POI):
         # net thermal loads
         for thermal_load in ['Hot Water', 'Steam', 'Cooling']:
             results.loc[:, f'Net Thermal {thermal_load} Load (kW)'] = \
-                results.loc[:, f'THERMAL LOAD: Site {thermal_load} Thermal Load (kW)'] - \
+                results.loc[:, f'Total Thermal {thermal_load} Load (kW)'] - \
                 results.loc[:, f'Total Thermal {thermal_load} Generation (kW)']
 
         return results, monthly_data
