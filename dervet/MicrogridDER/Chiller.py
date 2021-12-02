@@ -189,8 +189,9 @@ class Chiller(DER, DERExtension, ContinuousSizing):
             costs.update({self.name + ' fuel_cost': fuel_exp})
         #elif self.power_source == 'heat':
         #    # the chiller consumes heat
-        #    # the fuel cost should show up in the boiler/CHP's fuel cost output.
-        #    # add to thermal energy balance (hotwater) in dervetPOI
+        #    # the fuel cost should show up in the boiler/CHP's fuel cost output,
+        #    #   because these technologies will have to generate more hot water.
+        #    # add a term to the thermal energy balance (hotwater) in dervetPOI
 
         return costs
 

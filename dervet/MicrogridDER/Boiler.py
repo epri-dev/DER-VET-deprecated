@@ -78,7 +78,7 @@ class Boiler(DER, ContinuousSizing, DERExtension):
         self.tag = 'Boiler'
 
         # cop is the ratio of cooling provided to the power input
-        #   ( Btu/hr of cooling / Btu/hr of [electricity|natural gas|heat] )
+        #   ( Btu/hr of heating / Btu/hr of [electricity|natural gas] )
         self.cop = params['coefficient_of_performance']
         self.power_source = params['power_source']  # electricity, natural gas
 
