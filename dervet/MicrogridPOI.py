@@ -421,14 +421,15 @@ class MicrogridPOI(POI):
         if np.all(results['Total Load (kW)'] == results['Total Original Load (kW)']):
             # Drop Total Original Load
             results.drop('Total Original Load (kW)', axis=1, inplace=True)
-        # net load is the load see at the POI
+        # net load is the load seen at the POI
         results.loc[:, 'Net Load (kW)'] = \
             results.loc[:, 'Total Load (kW)'] - results.loc[:, 'Total Generation (kW)'] - \
             results.loc[:, 'Total Storage Power (kW)']
         # net thermal loads
         for thermal_load in ['Hot Water', 'Steam', 'Cooling']:
-            results.loc[:, f'Net Thermal {thermal_load} Load (kW)'] = \
-                results.loc[:, f'Total Thermal {thermal_load} Load (kW)'] - \
-                results.loc[:, f'Total Thermal {thermal_load} Generation (kW)']
+            if f'Total Thermal {thermal_load} Load (kW)' in results.columns:
+                results.loc[:, f'Net Thermal {thermal_load} Load (kW)'] = \
+                    results.loc[:, f'Total Thermal {thermal_load} Load (kW)'] - \
+                    results.loc[:, f'Total Thermal {thermal_load} Generation (kW)']
 
         return results, monthly_data
