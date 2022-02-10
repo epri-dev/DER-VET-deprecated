@@ -82,6 +82,7 @@ class Chiller(DER, DERExtension, ContinuousSizing):
         #   ( Btu/hr of cooling / Btu/hr of [electricity|natural gas|heat] )
         self.cop = params['coefficient_of_performance']
         self.power_source = params['power_source']  # electricity, natural gas, heat
+        TellUser.debug(f"Chiller power_source is {self.power_source}")
 
         self.rated_power = KW_PER_TON * params['rated_capacity']  # tons/chiller
 
@@ -178,7 +179,6 @@ class Chiller(DER, DERExtension, ContinuousSizing):
             #self.name + ' variable': cvx.sum(self.variable_om * self.dt * annuity_scalar * total_out)
         })
 
-        print(f'{self.name}--power_source: {self.power_source}')
         #if self.power_source == 'electricity':
         #    # the chiller consumes electricity
         #    # this manifests as an increase in the electricity bill

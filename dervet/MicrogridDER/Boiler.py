@@ -81,6 +81,7 @@ class Boiler(DER, ContinuousSizing, DERExtension):
         #   ( Btu/hr of heating / Btu/hr of [electricity|natural gas] )
         self.cop = params['coefficient_of_performance']
         self.power_source = params['power_source']  # electricity, natural gas
+        TellUser.debug(f"Boiler power_source is {self.power_source}")
 
         self.rated_power = KW_PER_MMBTU_HR * params['rated_capacity']  # MMBtu/Boiler
 
@@ -178,7 +179,6 @@ class Boiler(DER, ContinuousSizing, DERExtension):
             #self.name + ' variable': cvx.sum(self.variable_om * self.dt * annuity_scalar * total_out)
         })
 
-        print(f'{self.name}--power_source: {self.power_source}')
         #if self.power_source == 'electricity':
         #    # the boiler consumes electricity
         #    # this manifests as an increase in the electricity bill

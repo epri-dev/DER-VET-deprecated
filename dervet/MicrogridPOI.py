@@ -275,26 +275,27 @@ class MicrogridPOI(POI):
 
         # print parameters for each DER
         for der_instance in self.active_ders:
-            print()
-            print('{}: {:14} {:>5}'.format(der_instance.name, 'tech_type = ', str(der_instance.technology_type)))
-            print('{}: {:14} {:>5}'.format(der_instance.name, 'being_sized = ', str(der_instance.being_sized())))
-            print('{}: {:14} {:>5}'.format(der_instance.name, 'is_hot = ', str(der_instance.is_hot)))
-            print('{}: {:14} {:>5}'.format(der_instance.name, 'is_cold = ', str(der_instance.is_cold)))
-            print('{}: {:14} {:>5}'.format(der_instance.name, 'is_electric = ', str(der_instance.is_electric)))
-            print('{}: {:14} {:>5}'.format(der_instance.name, 'is_fuel = ', str(der_instance.is_fuel)))
+            ##NOTE: these print statements are helpful for understanding technologies
+            #print()
+            #print('{}: {:14} {:>5}'.format(der_instance.name, 'tech_type = ', str(der_instance.technology_type)))
+            #print('{}: {:14} {:>5}'.format(der_instance.name, 'being_sized = ', str(der_instance.being_sized())))
+            #print('{}: {:14} {:>5}'.format(der_instance.name, 'is_hot = ', str(der_instance.is_hot)))
+            #print('{}: {:14} {:>5}'.format(der_instance.name, 'is_cold = ', str(der_instance.is_cold)))
+            #print('{}: {:14} {:>5}'.format(der_instance.name, 'is_electric = ', str(der_instance.is_electric)))
+            #print('{}: {:14} {:>5}'.format(der_instance.name, 'is_fuel = ', str(der_instance.is_fuel)))
 
             # aggregate heat consumed by each chiller that is powered by heat
             if der_instance.tag == 'Chiller':
                 agg_heat_consumed_by_chillers += der_instance.get_heat_consumed(mask)
 
-        # print info in these function arguments
-        print('\nopt_size: ', sum(mask))
-        print(f'power_in:\n  {power_in.size}\n  {power_in.name()}\n  {power_in.value}')
-        print(f'power_out:\n  {power_out.size}\n  {power_out.name()}\n  {power_out.value}')
-        print(f'steam_in:\n  {steam_in.size}\n  {steam_in.name()}\n  {steam_in.value}')
-        print(f'hotwater_in:\n  {hotwater_in.size}\n  {hotwater_in.name()}\n  {hotwater_in.value}')
-        print(f'cold_in:\n  {cold_in.size}\n  {cold_in.name()}\n  {cold_in.value}')
-        print
+        ##NOTE: these print statements disclose info for these function arguments
+        #print('\nopt_size: ', sum(mask))
+        #print(f'power_in:\n  {power_in.size}\n  {power_in.name()}\n  {power_in.value}')
+        #print(f'power_out:\n  {power_out.size}\n  {power_out.name()}\n  {power_out.value}')
+        #print(f'steam_in:\n  {steam_in.size}\n  {steam_in.name()}\n  {steam_in.value}')
+        #print(f'hotwater_in:\n  {hotwater_in.size}\n  {hotwater_in.name()}\n  {hotwater_in.value}')
+        #print(f'cold_in:\n  {cold_in.size}\n  {cold_in.name()}\n  {cold_in.value}')
+        #print
 
         # thermal power balance constraints
         if self.site_steam_load is not None:
@@ -315,13 +316,6 @@ class MicrogridPOI(POI):
             if cold_in.variables():
                 TellUser.debug('adding thermal cooling power balance constraint')
                 constraint_list += [cvx.NonPos(-1 * cold_in + self.site_cooling_load[mask])]
-
-#        print('\nconstraints:')
-#        print('\n'.join([k.name() for k in constraint_list]))
-#
-#        print('\ncosts:')
-#        print('\n'.join([f'{k}: {v}' for k, v in obj_expression.items()]))
-#        print()
 
         return obj_expression, constraint_list
 
