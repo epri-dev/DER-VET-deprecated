@@ -51,6 +51,7 @@ from storagevet.ErrorHandling import *
 
 class Load(DER):
     """ An Site Load object
+        NOTE: this is under development and not used currently
 
     """
 
