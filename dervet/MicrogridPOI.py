@@ -57,17 +57,21 @@ class MicrogridPOI(POI):
         self.site_cooling_load = None
         self.site_steam_load = None
         self.site_hotwater_load = None
+        self.has_thermal_load = False
         for der in self.active_ders:
             try:
                 self.site_steam_load = der.site_steam_load
+                self.has_thermal_load = True
             except AttributeError:
                 pass
             try:
                 self.site_hotwater_load = der.site_hotwater_load
+                self.has_thermal_load = True
             except AttributeError:
                 pass
             try:
                 self.site_cooling_load = der.site_cooling_load
+                self.has_thermal_load = True
             except AttributeError:
                 pass
 

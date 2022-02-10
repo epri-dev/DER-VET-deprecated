@@ -335,7 +335,7 @@ class MicrogridScenario(Scenario):
             print(f'\ncosts ({len(functions)}):')
             print('\n'.join([f'{k}: {v}' for k, v in functions.items()]))
             print()
-            cvx_problem, obj_expressions, cvx_error_msg = self.solve_optimization(functions, constraints)
+            cvx_problem, obj_expressions, cvx_error_msg = self.solve_optimization(functions, constraints, force_glpk_mi=self.poi.has_thermal_load)
             self.save_optimization_results(opt_period, sub_index, cvx_problem, obj_expressions, cvx_error_msg)
 
     def set_up_optimization(self, opt_window_num, annuity_scalar=1, ignore_der_costs=False):
