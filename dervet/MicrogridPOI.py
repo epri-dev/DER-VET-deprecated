@@ -191,7 +191,6 @@ class MicrogridPOI(POI):
                 # total_soe += der_instance.get_state_of_energy(mask)
 
             if der_inst.tag in ['Chiller', 'Boiler']:
-                # FIXME:
                 # if these technologies are electric, they add to load_sum,
                 # if not, get_charge() will return zeroes
                 load_sum += der_inst.get_charge(mask)
@@ -199,44 +198,31 @@ class MicrogridPOI(POI):
             # thermal power recovered: hot (steam/hotwater) and cold
             #if der_inst.is_hot:
             if der_inst.tag in ['CHP', 'Boiler']:
-                if self.site_steam_load is None and self.site_hotwater_load is None:
-                    TellUser.warning('A heat source technology is active ' +
-                                     f'({der_inst.unique_tech_id()}), but you have set the ' +
-                                     f'scenario parameter incl_thermal_load to False. Any ' +
-                                     f'thermal load will be ignored.')
-                else:
-                    if self.site_steam_load is not None:
-                        TellUser.debug(f'adding heat (steam) generated from this DER: ' +
-                                       f'{der_inst.unique_tech_id()}')
-                        agg_steam_heating_power += der_inst.get_steam_generated(mask)
-                    if self.site_hotwater_load is not None:
-                        TellUser.debug(f'adding heat (hotwater) generated from this DER: ' +
-                                       f'{der_inst.unique_tech_id()}')
-                        agg_hotwater_heating_power += der_inst.get_hotwater_generated(mask)
+                TellUser.debug(f'adding heat (steam) generated from this DER: ' +
+                                f'{der_inst.unique_tech_id()}')
+                agg_steam_heating_power += der_inst.get_steam_generated(mask)
+                TellUser.debug(f'adding heat (hotwater) generated from this DER: ' +
+                                f'{der_inst.unique_tech_id()}')
+                agg_hotwater_heating_power += der_inst.get_hotwater_generated(mask)
             #if der_inst.is_cold:
             if der_inst.tag == 'Chiller':
-                if self.site_cooling_load is None:
-                    TellUser.warning(f'A cold source technology is active ' +
-                                     f'({der_inst.unique_tech_id()}), but you have set the ' +
-                                     f'scenario parameter incl_thermal_load to False. Any ' +
-                                     f'thermal load will be ignored.')
-                else:
-                    TellUser.debug(f'adding cold generated from this DER: ' +
-                                   f'{der_inst.unique_tech_id()}')
-                    agg_thermal_cooling_power += der_inst.get_cold_generated(mask)
+                TellUser.debug(f'adding cold generated from this DER: ' +
+                                f'{der_inst.unique_tech_id()}')
+                agg_thermal_cooling_power += der_inst.get_cold_generated(mask)
 
-#        print('\nget_state_of_system Result:')
-#        print(f'load_sum ({load_sum.size}): {load_sum.value}')
-#        print(f'var_gen_sum ({var_gen_sum.size}): {var_gen_sum.value}')
-#        print(f'gen_sum ({gen_sum.size}): {gen_sum.value}')
-#        print(f'tot_net_ess ({tot_net_ess.size}): {tot_net_ess.value}')
-#        print(f'total_soe ({total_soe.size}): {total_soe.value}')
-#        print(f'agg_power_flows_in ({agg_power_flows_in.size}): {agg_power_flows_in.value}')
-#        print(f'agg_power_flows_out ({agg_power_flows_out.size}): {agg_power_flows_out.value}')
-#        print(f'agg_steam_heating_power ({agg_steam_heating_power.size}): {agg_steam_heating_power.value}')
-#        print(f'agg_hotwater_heating_power ({agg_hotwater_heating_power.size}): {agg_hotwater_heating_power.value}')
-#        print(f'agg_thermal_cooling_power ({agg_thermal_cooling_power.size}): {agg_thermal_cooling_power.value}')
-#        print()
+        ##NOTE: these print statements disclose info for get_state_of_system Results
+        #print('\nget_state_of_system Result:')
+        #print(f'load_sum ({load_sum.size}): {load_sum.value}')
+        #print(f'var_gen_sum ({var_gen_sum.size}): {var_gen_sum.value}')
+        #print(f'gen_sum ({gen_sum.size}): {gen_sum.value}')
+        #print(f'tot_net_ess ({tot_net_ess.size}): {tot_net_ess.value}')
+        #print(f'total_soe ({total_soe.size}): {total_soe.value}')
+        #print(f'agg_power_flows_in ({agg_power_flows_in.size}): {agg_power_flows_in.value}')
+        #print(f'agg_power_flows_out ({agg_power_flows_out.size}): {agg_power_flows_out.value}')
+        #print(f'agg_steam_heating_power ({agg_steam_heating_power.size}): {agg_steam_heating_power.value}')
+        #print(f'agg_hotwater_heating_power ({agg_hotwater_heating_power.size}): {agg_hotwater_heating_power.value}')
+        #print(f'agg_thermal_cooling_power ({agg_thermal_cooling_power.size}): {agg_thermal_cooling_power.value}')
+        #print()
 
         return load_sum, var_gen_sum, gen_sum, tot_net_ess, total_soe, agg_power_flows_in, \
             agg_power_flows_out, agg_steam_heating_power, agg_hotwater_heating_power, \

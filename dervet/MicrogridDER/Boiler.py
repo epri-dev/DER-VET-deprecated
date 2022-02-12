@@ -40,7 +40,7 @@ A Boiler cannot serve a cooling load, nor an electric load.
 """
 
 __author__ = 'Andrew Etringer'
-__copyright__ = 'Copyright 2020. Electric Power Research Institute (EPRI). All Rights Reserved.'
+__copyright__ = 'Copyright 2022. Electric Power Research Institute (EPRI). All Rights Reserved.'
 __license__ = 'EPRI'
 __maintainer__ = ['Andrew Etringer']
 __email__ = ['aetringer@epri.com']
@@ -144,7 +144,7 @@ class Boiler(DER, ContinuousSizing, DERExtension):
     def get_charge(self, mask):
         # when powered by electricity, this DER will consume some electrical load
         if self.is_electric:
-            TellUser.info(f'This electric Boiler ({self.name}) adds to the electrical load')
+            #TellUser.info(f'This electric Boiler ({self.name}) adds to the electrical load')
             #return self.variables_dict['hotwater'] / self.cop
             return (self.variables_dict['steam'] + self.variables_dict['hotwater']) / self.cop
         else:

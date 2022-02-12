@@ -2447,12 +2447,6 @@
                         "type": "bool",
                         "unit": "yes/no"
                     },
-                    "incl_thermal_load": {
-                        "allowed_values": "1|0",
-                        "cba": "n",
-                        "type": "bool",
-                        "unit": "yes/no"
-                    },
                     "kappa_ch_max": {
                         "cba": "n",
                         "type": "float"

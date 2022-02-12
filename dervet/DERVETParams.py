@@ -526,6 +526,11 @@ class ParamsDER(Params):
         """ Interprets user given data and prepares it for each technology.
 
         """
+        def non_zero_time_series_data_exists(col, ts):
+            if col in ts.columns and not (ts[col] == 0).all():
+                return True
+            return False
+
         time_series = self.Scenario['time_series']
         dt = self.Scenario['dt']
         binary = self.Scenario['binary']
@@ -610,36 +615,34 @@ class ParamsDER(Params):
                 self.record_input_error(f"Missing 'EV fleet/{id_str}' from timeseries input. Please include EV load.")
 
         if len(self.CHP):
-            if not self.Scenario['incl_thermal_load']:
-                TellUser.warning('with incl_thermal_load = 0, CHP will ignore any site thermal loads.')
             for id_str, chp_inputs in self.CHP.items():
                 chp_inputs.update({'dt': dt})
-
                 # add time series, monthly data, and any scenario case parameters to CHP parameter dictionary
-                if self.Scenario['incl_thermal_load']:
-                    try:  # TODO: we allow for multiple CHPs to be defined -- and if there were -- then they all would share the same data. Is this correct? --HN
-                        chp_inputs.update({'site_steam_load': KW_PER_MMBTU_HR * time_series.loc[:, 'Site Steam Thermal Load (MMBtu/hr)']})
-                    except:
-                        pass
-                    try:
-                        chp_inputs.update({'site_hotwater_load': KW_PER_MMBTU_HR * time_series.loc[:, 'Site Hot Water Thermal Load (MMBtu/hr)']})
-                    except:
-                        pass
-                    if chp_inputs.get('site_steam_load') is None and chp_inputs.get('site_hotwater_load') is None:
-                        # report error when thermal load has neither steam nor hotwater components
-                        self.record_input_error("CHP is missing a site heating load ('Site Steam Thermal Load (MMBtu/hr)' and/or 'Site Hot Water Thermal Load (MMBtu/hr)') from timeseries data input")
-                    elif chp_inputs.get('site_steam_load') is None or chp_inputs.get('site_hotwater_load') is None:
-                        # when only one thermal load exists (steam or hotwater), make the other one with zeroes and warn
-                        if chp_inputs.get('site_steam_load') is None:
-                            all_zeroes = chp_inputs['site_hotwater_load'].copy()
-                            all_zeroes.values[:] = 0
-                            chp_inputs.update({'site_steam_load': all_zeroes})
-                            TellUser.warning('since "site steam thermal load" data were not input, we create a time series with all zeroes for it')
-                        if chp_inputs.get('site_hotwater_load') is None:
-                            all_zeroes = chp_inputs['site_steam_load'].copy()
-                            all_zeroes.values[:] = 0
-                            chp_inputs.update({'site_hotwater_load': all_zeroes})
-                            TellUser.warning('since "site hotwater thermal load" data were not input, we create a time series with all zeroes for it')
+                # TODO: we allow for multiple CHPs to be defined -- and if there were -- then they all would share the same data.
+                #       Is this correct? --HN; yes --AE
+                try:
+                    chp_inputs.update({'site_steam_load': KW_PER_MMBTU_HR * time_series.loc[:, 'Site Steam Thermal Load (MMBtu/hr)']})
+                except KeyError:
+                    pass
+                try:
+                    chp_inputs.update({'site_hotwater_load': KW_PER_MMBTU_HR * time_series.loc[:, 'Site Hot Water Thermal Load (MMBtu/hr)']})
+                except KeyError:
+                    pass
+                # report error when thermal load has neither steam nor hotwater components
+                if chp_inputs.get('site_steam_load') is None and chp_inputs.get('site_hotwater_load') is None:
+                    self.record_input_error("CHP is missing required site heating load time series input data. 'Site Steam Thermal Load (MMBtu/hr)' and/or 'Site Hot Water Thermal Load (MMBtu/hr)' must exist as time series data inputs.")
+                # when only one thermal load exists (steam or hotwater), make the other one with zeroes and warn
+                elif chp_inputs.get('site_steam_load') is None or chp_inputs.get('site_hotwater_load') is None:
+                    if chp_inputs.get('site_steam_load') is None:
+                        all_zeroes = chp_inputs['site_hotwater_load'].copy()
+                        all_zeroes.values[:] = 0
+                        chp_inputs.update({'site_steam_load': all_zeroes})
+                        TellUser.warning('Thermal heating loads are input as separate hot water and steam time series. Since we only found site hot water thermal load data, we assume a site steam thermal load time series of all zeroes.')
+                    if chp_inputs.get('site_hotwater_load') is None:
+                        all_zeroes = chp_inputs['site_steam_load'].copy()
+                        all_zeroes.values[:] = 0
+                        chp_inputs.update({'site_hotwater_load': all_zeroes})
+                        TellUser.warning('Thermal heating loads are input as separate hot water and steam time series. Since we only found site steam thermal load data, we assume a site hot water thermal load time series of all zeroes.')
 
         if len(self.CT):
             for id_str, ct_inputs in self.CT.items():
@@ -650,52 +653,63 @@ class ParamsDER(Params):
                 inputs.update({'dt': dt})
 
         if len(self.Chiller):
-            if not self.Scenario['incl_thermal_load']:
-                TellUser.warning('with incl_thermal_load = 0, Chiller will ignore any site thermal loads.')
             for id_str, chiller_input in self.Chiller.items():
                 chiller_input.update({'dt': dt})
-
                 # add time series to Chiller parameter dictionary
-                if self.Scenario['incl_thermal_load']:
-                    try:
-                        chiller_input.update({'site_cooling_load': KW_PER_TON * time_series.loc[:, 'Site Cooling Thermal Load (tons)']})
-                    except:
-                        pass
-                    if chiller_input.get('site_cooling_load') is None:
-                        # report error when thermal load does not have a cooling load
-                        self.record_input_error("Chiller is missing a site cooling load ('Site Cooling Thermal Load (tons)' from timeseries data input")
+                try:
+                    chiller_input.update({'site_cooling_load': KW_PER_TON * time_series.loc[:, 'Site Cooling Thermal Load (tons)']})
+                except KeyError:
+                    pass
+                # report error when thermal load does not have a cooling load
+                if chiller_input.get('site_cooling_load') is None:
+                    self.record_input_error("Chiller is missing a site cooling load ('Site Cooling Thermal Load (tons)' from timeseries data input")
+                    self.record_input_error("Chiller is missing required site cooling load time series input data. 'Site Cooling Thermal Load (tons)' must exist as a time series data input.")
+                # if the chiller is powered by heat, then an active Boilder or CHP is required
+                if chiller_input['power_source'] == 'heat' and not (len(self.Boiler) + len(self.CHP)):
+                    self.record_input_error(f"Chiller ({chiller_input['name']}) is powered by heat, but there is not an active Boiler or CHP to provide this heat.")
+        else:
+            # without an active Chiller, report error if a cooling load time series exists
+            #     (instead of silently ignoring it)
+            if non_zero_time_series_data_exists('Site Cooling Thermal Load (tons)', time_series):
+                self.record_input_error("A non-zero site cooling load time series ('Site Cooling Thermal Load (tons)') exists, but there are no active Chillers. Please activate a Chiller, or remove these data from the input time series.")
 
         if len(self.Boiler):
-            if not self.Scenario['incl_thermal_load']:
-                TellUser.warning('with incl_thermal_load = 0, Boiler will ignore any site thermal loads.')
             for id_str, boiler_inputs in self.Boiler.items():
                 boiler_inputs.update({'dt': dt})
-
                 # add time series, monthly data, and any scenario case parameters to boiler parameter dictionary
-                if self.Scenario['incl_thermal_load']:
-                    try:  # TODO: we allow for multiple boilers to be defined -- and if there were -- then they all would share the same data. Is this correct? --HN
-                        boiler_inputs.update({'site_steam_load': KW_PER_MMBTU_HR * time_series.loc[:, 'Site Steam Thermal Load (MMBtu/hr)']})
-                    except:
-                        pass
-                    try:
-                        boiler_inputs.update({'site_hotwater_load': KW_PER_MMBTU_HR * time_series.loc[:, 'Site Hot Water Thermal Load (MMBtu/hr)']})
-                    except:
-                        pass
-                    if boiler_inputs.get('site_steam_load') is None and boiler_inputs.get('site_hotwater_load') is None:
-                        # report error when thermal load has neither steam nor hotwater components
-                        self.record_input_error("Boiler is missing a site heating load ('Site Steam Thermal Load (MMBtu/hr)' and/or 'Site Hot Water Thermal Load (MMBtu/hr)') from timeseries data input")
-                    elif boiler_inputs.get('site_steam_load') is None or boiler_inputs.get('site_hotwater_load') is None:
-                        # when only one thermal load exists (steam or hotwater), make the other one with zeroes and warn
-                        if boiler_inputs.get('site_steam_load') is None:
-                            all_zeroes = boiler_inputs['site_hotwater_load'].copy()
-                            all_zeroes.values[:] = 0
-                            boiler_inputs.update({'site_steam_load': all_zeroes})
-                            TellUser.warning('since "site steam thermal load" data were not input, we create a time series with all zeroes for it')
-                        if boiler_inputs.get('site_hotwater_load') is None:
-                            all_zeroes = boiler_inputs['site_steam_load'].copy()
-                            all_zeroes.values[:] = 0
-                            boiler_inputs.update({'site_hotwater_load': all_zeroes})
-                            TellUser.warning('since "site hotwater thermal load" data were not input, we create a time series with all zeroes for it')
+                # TODO: we allow for multiple boilers to be defined -- and if there were -- then they all would share the same data.
+                #       Is this correct? --HN; yes --AE
+                try:
+                    boiler_inputs.update({'site_steam_load': KW_PER_MMBTU_HR * time_series.loc[:, 'Site Steam Thermal Load (MMBtu/hr)']})
+                except KeyError:
+                    pass
+                try:
+                    boiler_inputs.update({'site_hotwater_load': KW_PER_MMBTU_HR * time_series.loc[:, 'Site Hot Water Thermal Load (MMBtu/hr)']})
+                except KeyError:
+                    pass
+                # report error when thermal load has neither steam nor hotwater components
+                if boiler_inputs.get('site_steam_load') is None and boiler_inputs.get('site_hotwater_load') is None:
+                    self.record_input_error("Boiler is missing required site heating load time series input data. 'Site Steam Thermal Load (MMBtu/hr)' and/or 'Site Hot Water Thermal Load (MMBtu/hr)' must exist as time series data inputs.")
+                # when only one thermal load exists (steam or hotwater), make the other one with zeroes and warn
+                elif boiler_inputs.get('site_steam_load') is None or boiler_inputs.get('site_hotwater_load') is None:
+                    if boiler_inputs.get('site_steam_load') is None:
+                        all_zeroes = boiler_inputs['site_hotwater_load'].copy()
+                        all_zeroes.values[:] = 0
+                        boiler_inputs.update({'site_steam_load': all_zeroes})
+                        TellUser.warning('Thermal heating loads are input as separate hot water and steam time series. Since we only found site hot water thermal load data, we assume a site steam thermal load time series of all zeroes.')
+                    if boiler_inputs.get('site_hotwater_load') is None:
+                        all_zeroes = boiler_inputs['site_steam_load'].copy()
+                        all_zeroes.values[:] = 0
+                        boiler_inputs.update({'site_hotwater_load': all_zeroes})
+                        TellUser.warning('Thermal heating loads are input as separate hot water and steam time series. Since we only found site steam thermal load data, we assume a site hot water thermal load time series of all zeroes.')
+
+        # without an active Boiler or CHP, report error if a heating load time series exists
+        #     (instead of silently ignoring it)
+        if not (len(self.Boiler) + len(self.CHP)):
+            if non_zero_time_series_data_exists('Site Steam Thermal Load (MMBtu/hr)', time_series):
+                self.record_input_error("A non-zero site heating (steam) load time series ('Site Steam Thermal Load (MMBtu/hr)') exists, but there is no active Boiler or CHP. Please activate a Boiler and/or a CHP, or remove these data from the input time series.")
+            if non_zero_time_series_data_exists('Site Hot Water Thermal Load (MMBtu/hr)', time_series):
+                self.record_input_error("A non-zero site heating (hot water) load time series ('Site Hot Water Thermal Load (MMBtu/hr)') exists, but there is no active Boiler or CHP. Please activate a Boiler and/or a CHP, or remove these data from the input time series.")
 
         super().load_technology(names_list)
 

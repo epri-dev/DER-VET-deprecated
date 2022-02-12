@@ -58,16 +58,13 @@ class CHP(CT):
         self.tag = 'CHP'
         self.is_hot = True
 
-        self.electric_ramp_rate = params['electric_ramp_rate']      # MW/min # TODO this is not being used? --AE
         self.electric_heat_ratio = params['electric_heat_ratio']    # elec/heat (generation)
         self.max_steam_ratio = params['max_steam_ratio']           # steam/hotwater relative ratio
         # time series inputs
         self.site_steam_load = params.get('site_steam_load')    # input as MMBtu/hr, but converted to kW in DERVETParams.py
         self.site_hotwater_load = params.get('site_hotwater_load')   # input as MMBtu/hr, but converted to kW in DERVETParams.py
         # thermal site load booleans
-        # for when incl_thermal_loads = 0
         self.site_thermal_load_exists = (self.site_steam_load is not None and self.site_hotwater_load is not None)
-        # for when incl_thermal_loads = 1
         self.steam_only = False
         self.hotwater_only = False
         if self.site_thermal_load_exists:

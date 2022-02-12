@@ -143,7 +143,7 @@ class Chiller(DER, DERExtension, ContinuousSizing):
     def get_charge(self, mask):
         # when powered by electricity, this DER will consume some electrical load
         if self.is_electric:
-            TellUser.info(f'This electric Chiller ({self.name}) adds to the electrical load')
+            #TellUser.info(f'This electric Chiller ({self.name}) adds to the electrical load')
             return self.variables_dict['cold'] / self.cop
         else:
             # returns all zeroes (from base class)
