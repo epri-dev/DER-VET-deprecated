@@ -40,7 +40,7 @@ from pathlib import Path
 
 # TODO -- declare these constants in one place for access across DER-VET
 KW_PER_TON = 3.5168525  # unit conversion (1 ton in kW)
-KW_PER_MMBTU_HR = 293.1 # unit conversion (1 MMBtu/hr in kW)
+KW_PER_MMBTU_HR = 293.071107 # unit conversion (1 MMBtu/hr in kW)
 
 class ParamsDER(Params):
     """

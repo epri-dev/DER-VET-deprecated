@@ -55,7 +55,7 @@ from dervet.MicrogridDER.DERExtension import DERExtension
 from dervet.MicrogridDER.ContinuousSizing import ContinuousSizing
 from storagevet.ErrorHandling import *
 
-KW_PER_MMBTU_HR = 293.1 # unit conversion (1 MMBtu/hr in kW)
+KW_PER_MMBTU_HR = 293.071107 # unit conversion (1 MMBtu/hr in kW)
 
 class Boiler(DER, ContinuousSizing, DERExtension):
     """ A Boiler technology, with sizing optimization

@@ -56,7 +56,7 @@ from dervet.MicrogridDER.ContinuousSizing import ContinuousSizing
 from storagevet.ErrorHandling import *
 
 KW_PER_TON = 3.5168525  # unit conversion (1 ton in kW)
-KW_PER_MMBTU_HR = 293.1 # unit conversion (1 MMBtu/hr in kW)  # needed for fuel_cost
+KW_PER_MMBTU_HR = 293.071107 # unit conversion (1 MMBtu/hr in kW)  # needed for fuel_cost
 
 class Chiller(DER, DERExtension, ContinuousSizing):
     """ A Chiller technology, with sizing optimization
