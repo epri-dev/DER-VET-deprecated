@@ -51,6 +51,7 @@ class MicrogridPOI(POI):
         if self.is_sizing_optimization:
             self.error_checks_on_sizing()
 
+        self.active_load_dump = params['active_load_dump']
         # add thermal site load time series
         # NOTE: these loads can come from different technologies
         #       but there is only a single one of each (they appear in the input time series)
@@ -409,6 +410,16 @@ class MicrogridPOI(POI):
         results.loc[:, 'Net Load (kW)'] = \
             results.loc[:, 'Total Load (kW)'] - results.loc[:, 'Total Generation (kW)'] - \
             results.loc[:, 'Total Storage Power (kW)']
+        # load dump is the excess generation that is wasted
+        #     for cases where we are applying a POI constraint,
+        #     this is where (net load + max_export) is negative, otherwise it's all zeroes
+        if self.active_load_dump:
+            if self.apply_poi_constraints:
+                results.loc[:, 'Load Dump (kW)'] = (results.loc[:, 'Net Load (kW)'] + self.max_export) * -1
+                results.loc[:, 'Load Dump (kW)'].where(results.loc[:, 'Load Dump (kW)'] > 0, 0, inplace=True)
+            else:
+                results.loc[:, 'Load Dump (kW)'] = results.loc[:, 'Net Load (kW)'] * 0
+                TellUser.warning('With a Load Dump activated and Scenario--apply_interconnection_constraints OFF, the Load Dump will be all zeroes.')
         # net thermal loads
         for thermal_load in ['Hot Water', 'Steam', 'Cooling']:
             if f'Total Thermal {thermal_load} Load (kW)' in results.columns:

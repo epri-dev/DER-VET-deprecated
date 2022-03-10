@@ -2411,6 +2411,11 @@
             },
             "Scenario": {
                 "keys": {
+                    "activate_electricity_load_dump": {
+                        "type": "bool",
+                        "allowed_values": "1|0",
+                        "unit": "yes/no"
+                    },
                     "apply_interconnection_constraints": {
                         "type": "bool",
                         "allowed_values": "1|0",

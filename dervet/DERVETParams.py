@@ -514,6 +514,13 @@ class ParamsDER(Params):
                 self.referenced_data["customer_tariff"][finance["customer_tariff_filename"]]
         return cba_dict
 
+    def load_scenario(self):
+        """ Interprets user given data and prepares it for Scenario initialization
+            Adds load dump boolean to POI
+        """
+        super().load_scenario()
+        self.POI.update({'active_load_dump': self.Scenario['activate_electricity_load_dump']})
+
     def load_finance(self):
         """ Interprets user given data and prepares it for Finance.
 
