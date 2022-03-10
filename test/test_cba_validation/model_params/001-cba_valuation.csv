@@ -133,7 +133,7 @@ ICE,1,acr,10,%,,,,,"annual charge rate (ACR), the % of capital cost that is incu
 ICE,1,ter,7,%,,,,,technology escalation rate: how quickly the technology increases/decreases in cost,.,no,.,.,
 DCM,.,growth,5,%/yr,float,"[0, 100]",,None,"Growth Rate of demand charges within the tariff, assuming the same tariff structure applies",yes,no,.,.,
 retailTimeShift,.,growth,5,%/yr,float,"[0, 100]",,None,"Growth Rate of retail energy charges within the tariff, assuming the same tariff structure applies",yes,no,.,.,
-Scenario,.,incl_thermal_load,0,y/n,bool,"{0,1}",,None,Flag to include one or more thermal site load time series in the thermal heating and/or cooling energy balance constraint (IF SET TO ONE THERE MUST BE AN ACTIVE THERMAL SOURCE TECHNOLOGY),.,no,.,.,
+Scenario,.,activate_electricity_load_dump,0,y/n,bool,"{0,1}",N/A,None,Flag to activate an electricity load dump,.,no,.,.,
 ICE,1,rated_capacity,4000,kW/generator,float,"[0, rated_capacity)",,None,Maximum power that a generator can provide,.,no,.,.,
 ICE,1,max_rated_capacity,200,kW/generator,float,"[0, min_rated_power)",,None,"Maximum rated power of generator (if sizing), set to 0 if you want DER-VET to ignore",.,no,.,.,
 ICE,1,min_rated_capacity,0,kW/generator,float,"[0, max_rated_power)",,None,"Minimum rated power of generator (if sizing), set to 0 if you want DER-VET to ignore",.,no,.,.,

@@ -91,7 +91,7 @@ FR,CombinedMarket,0,y/n,bool,"{0,1}",,None,Must the storage bid as much reg up a
 FR,duration,0,hours,float,"[0, 24]",,None,Duration for energy reservation requirements,.,no,
 FR,u_ts_constraints,1,y/n,bool,"{0,1}",,None,T or F to apply Reg Up time series service participation constraints,.,no,
 FR,d_ts_constraints,1,y/n,bool,"{0,1}",,None,T or F to apply Reg Down time series service participation constraints,.,no,
-Scenario,incl_thermal_load,0,y/n,bool,"{0,1}",,None,Flag to include one or more thermal site load time series in the thermal heating and/or cooling energy balance constraint (IF SET TO ONE THERE MUST BE AN ACTIVE THERMAL SOURCE TECHNOLOGY),.,no,
+Scenario,activate_electricity_load_dump,0,y/n,bool,"{0,1}",N/A,None,Flag to activate an electricity load dump,.,no,
 Battery,ecc%,0,%,float,"[0, 100] ",,,the economic carrying cost percent,.,no,
 Battery,state_of_health,73,%,float,,,,State of heath at end of life (percentage of original energy capacity that will tigger a replacement of the equipement),.,no,
 Battery,replacement_construction_time,1,years,int,"[1, inf)",,None,"The time, in years, it takes finish DER equipement replacement construction",.,no,

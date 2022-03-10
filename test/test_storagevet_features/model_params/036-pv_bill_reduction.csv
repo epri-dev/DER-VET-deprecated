@@ -58,7 +58,7 @@ PV,1,ter,7,%,float,"[0, 100] ",,None,technology escalation rate: how quickly the
 PV,1,grid_charge_penalty,0,$/kWh,float,"[0,inf)",,None,"Apply a penalty on charging from the grid, which includes DA energy time shift, Retail energy time shift, and regulation energy.",.,no,.,.,
 DCM,.,growth,5,%/yr,float,"[0, 100]",,None,"Growth Rate of demand charges within the tariff, assuming the same tariff structure applies",yes,no,.,.,
 retailTimeShift,.,growth,5,%/yr,float,"[0, 100]",,None,"Growth Rate of retail energy charges within the tariff, assuming the same tariff structure applies",yes,no,.,.,
-Scenario,.,incl_thermal_load,0,y/n,bool,"{0,1}",,None,Flag to include one or more thermal site load time series in the thermal heating and/or cooling energy balance constraint (IF SET TO ONE THERE MUST BE AN ACTIVE THERMAL SOURCE TECHNOLOGY),.,no,.,.,
+Scenario,.,activate_electricity_load_dump,0,y/n,bool,"{0,1}",N/A,None,Flag to activate an electricity load dump,.,no,.,.,
 PV,1,nu,20,%,float,"[0, 100]",,None,Minimum percent of PV generation one can expect within a timestep IF PV INCLUDED (default=20 when dt=1),.,no,.,.,
 PV,1,gamma,43,%,float,"[0, 100]",,None,Percent of the timestep for which PV is at it's minimum generation (default=43 when dt=1),.,no,.,.,
 PV,1,ecc%,0,%,float,"[0, 100] ",,,the economic carrying cost percent,.,no,.,.,

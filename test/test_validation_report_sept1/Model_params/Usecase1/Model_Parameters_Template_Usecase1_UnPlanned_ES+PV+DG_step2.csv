@@ -158,7 +158,7 @@ Deferral,planned_load_limit,15000,kW,float,"[0, max_import)",,None,Max net impor
 Deferral,reverse_power_flow_limit,-15000,kW,float,"[0, max_export)",,None,Max net export power flow to grid,.,no,.,.,
 Deferral,growth,6,%/yr,float,"[0, 100]",,None,Growth Rate of deferral load,.,no,.,.,
 Deferral,price,10000,$/yr,float,"[0, price)",,None,Yearly Cost Avoided for deferring a T and D asset upgrade,.,.,1000,n,
-Scenario,incl_thermal_load,0,y/n,bool,"{0,1}",,None,Flag to include one or more thermal site load time series in the thermal heating and/or cooling energy balance constraint (IF SET TO ONE THERE MUST BE AN ACTIVE THERMAL SOURCE TECHNOLOGY),.,no,.,.,
+Scenario,activate_electricity_load_dump,0,y/n,bool,"{0,1}",N/A,None,Flag to activate an electricity load dump,.,no,.,.,
 Battery,ecc%,0,%,float,"[0, 100] ",,,the economic carrying cost percent,.,no,.,.,
 PV,fixed_om_cost,12,$/yr,float,"[0, fixed_om_cost)",,None,PV system's yearly fixed operation and management cost (subject to yearly inflation),.,no,12,n,
 PV,ecc%,0,%,float,"[0, 100] ",,,the economic carrying cost percent,.,no,.,.,
