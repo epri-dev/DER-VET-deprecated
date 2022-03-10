@@ -7,7 +7,6 @@ Scenario,.,start_year,2017,year,Period,opt_years must be between start_year and 
 Scenario,.,end_year,2018,year,Period,opt_years must be between start_year and end_year,,None,last year of analysis,.,no,2030,n,
 Scenario,.,n,month,hours,string/int,"{month,year,(0,8760]}",,None,optimization prediction horizon ('month' or number of hours),.,no,.,.,
 Scenario,.,incl_site_load,1,y/n,bool,"{0,1}",,None,Flag to include site_load in load calculation (MUST BE ONE IF DCM OR RETAILETS ARE ON),.,no,.,.,
-Scenario,.,incl_thermal_load,0,y/n,bool,"{0,1}",,None,Flag to include one or more thermal site load time series in the thermal heating and/or cooling energy balance constraint (IF SET TO ONE THERE MUST BE AN ACTIVE THERMAL SOURCE TECHNOLOGY),.,no,.,.,
 Scenario,.,apply_interconnection_constraints,0,y/n,bool,"{0,1}",,None,Flag to apply POI interconnection constraints: max_import max_export,.,no,.,.,
 Scenario,.,max_import,0,kW,float,<0,,None,Maximum kW that can flow from grid to microgrid via POI,.,no,.,.,
 Scenario,.,max_export,0,kW,float,>0,,None,Maximum kW that can flow from microgrid to grid via POI,.,no,.,.,
@@ -24,6 +23,7 @@ Scenario,.,kappa_dis_max,100000,,float,<0,,None,penalty on relaxing maximum char
 Scenario,.,kappa_dis_min,100000,,float,<0,,None,penalty on relaxing minimum charging,.,no,.,.,unused
 Scenario,.,kappa_ch_max,100000,,float,<0,,None,penalty on relaxing maximum discharging,.,no,.,.,unused
 Scenario,.,kappa_ch_min,100000,,float,<0,,None,penalty on relaxing minimum discharging,.,no,.,.,unused
+Scenario,.,activate_electricity_load_dump,0,y/n,bool,"{0,1}",N/A,None,Flag to activate an electricity load dump,.,no,.,.,
 Finance,.,inflation_rate,3,%/year,float,"[0, 100]",,None,Yearly inflation rate for use in the financial analysis,yes,no,3,n,
 Finance,.,npv_discount_rate,7,%/year,float,"[0, 100]",,None,Yearly NPV discount rate for use in the financial analysis,.,no,7,n,
 Finance,.,yearly_data_filename,.\data\yearly_data.csv,,string,valid file path to a yearly external incentives data file,,None,,.,no,.\dervet\storagevet\Data\yearly_data.csv,n,
