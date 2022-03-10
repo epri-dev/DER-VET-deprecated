@@ -2144,6 +2144,15 @@
                         },
                         "type": "bool"
                     },
+                    "replacement_construction_time": {
+                        "opt_value": "1",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "None",
+                            "value": "nan"
+                        },
+                        "type": "int"
+                    },
                     "salvage_value": {
                         "opt_value": "0",
                         "sensitivity": {
@@ -2830,6 +2839,15 @@
                         },
                         "type": "bool"
                     },
+                    "replacement_construction_time": {
+                        "opt_value": "1",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "None",
+                            "value": "nan"
+                        },
+                        "type": "int"
+                    },
                     "salvage_value": {
                         "opt_value": "0",
                         "sensitivity": {
@@ -2981,6 +2999,37 @@
             "1": {
                 "active": "no",
                 "keys": {
+                    "PPA": {
+                        "opt_value": "0",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "None",
+                            "value": "nan"
+                        },
+                        "type": "float"
+                    },
+                    "PPA_cost": {
+                        "opt_value": "0.0275",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "None",
+                            "value": "nan"
+                        },
+                        "type": "float"
+                    },
+                    "PPA_inflation_rate": {
+                        "evaluation": {
+                            "active": "nan",
+                            "value": "nan"
+                        },
+                        "opt_value": "2",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "nan",
+                            "value": "nan"
+                        },
+                        "type": "float"
+                    },
                     "acr": {
                         "opt_value": "10",
                         "sensitivity": {
@@ -3212,6 +3261,15 @@
                             "value": "nan"
                         },
                         "type": "bool"
+                    },
+                    "replacement_construction_time": {
+                        "opt_value": "1",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "None",
+                            "value": "nan"
+                        },
+                        "type": "int"
                     },
                     "salvage_value": {
                         "opt_value": "0",
@@ -3470,6 +3528,15 @@
             ".": {
                 "active": "yes",
                 "keys": {
+                    "activate_electricity_load_dump": {
+                        "opt_value": "0",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "None",
+                            "value": "nan"
+                        },
+                        "type": "bool"
+                    },
                     "apply_interconnection_constraints": {
                         "opt_value": "0",
                         "sensitivity": {
@@ -3520,15 +3587,6 @@
                         "type": "Period"
                     },
                     "incl_site_load": {
-                        "opt_value": "0",
-                        "sensitivity": {
-                            "active": "no",
-                            "coupled": "None",
-                            "value": "nan"
-                        },
-                        "type": "bool"
-                    },
-                    "incl_thermal_load": {
                         "opt_value": "0",
                         "sensitivity": {
                             "active": "no",
@@ -3734,6 +3792,22 @@
                             "value": "nan"
                         },
                         "type": "float"
+                    }
+                }
+            }
+        },
+        "alectricVehicle2": {
+            "1": {
+                "active": ".",
+                "keys": {
+                    "replacement_construction_time": {
+                        "opt_value": "1",
+                        "sensitivity": {
+                            "active": "no",
+                            "coupled": "None",
+                            "value": "nan"
+                        },
+                        "type": "int"
                     }
                 }
             }
