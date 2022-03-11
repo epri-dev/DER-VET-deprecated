@@ -527,6 +527,42 @@
                         "type": "float",
                         "unit": "%"
                     },
+                    "user_ch_rated_max": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "kW"
+                    },
+                    "user_ch_rated_min": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "kW"
+                    },
+                    "user_dis_rated_max": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "kW"
+                    },
+                    "user_dis_rated_min": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "kW"
+                    },
+                    "user_ene_rated_max": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "kW"
+                    },
+                    "user_ene_rated_min": {
+                        "cba": "n",
+                        "min": "0.0",
+                        "type": "float",
+                        "unit": "kW"
+                    },
                     "fuel_type": {
                         "cba": "n",
                         "allowed_values": "liquid|gas|other",
@@ -589,12 +625,6 @@
                         "cba": "n",
                         "min": "0.0",
                         "type": "float"
-                    },
-                    "electric_ramp_rate": {
-                        "cba": "n",
-                        "min": "0.0",
-                        "type": "float",
-                        "unit": "MW/min"
                     },
                     "heat_rate": {
                         "cba": "y",
@@ -1361,12 +1391,6 @@
                         "min": "-100.0",
                         "type": "float",
                         "unit": "%"
-                    },
-                    "fixed_om_cost": {
-                        "cba": "y",
-                        "min": "0.0",
-                        "type": "float",
-                        "unit": "$/year"
                     }
                 },
                 "type": "load"
