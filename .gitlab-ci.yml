@@ -30,9 +30,9 @@ pytest:
     - file ./storagevet/storagevet/Scenario.py
     - pip install -e ./storagevet
     - python -V
-    #- pip list
-    - python run_DERVET.py Model_Parameters_Template_DER.csv -v
+    - pip list
     - python -m pytest test --import-mode=importlib
+    - python run_DERVET.py Model_Parameters_Template_DER.csv -v
   tags:
     - 'docker'
   only:
