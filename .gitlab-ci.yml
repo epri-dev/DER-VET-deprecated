@@ -31,7 +31,7 @@ pytest:
     - pip install -e ./storagevet
     - python -V
     #- pip list
-    #- python run_DERVET.py Model_Parameters_Template_DER.csv -v
+    #- python run_DERVET.py Model_Parameters_Template_DER.csv
     - python -m pytest test
   tags:
     - 'docker'
