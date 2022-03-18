@@ -1,4 +1,4 @@
-image: python:3.7
+image: python:3.8.13
 
 variables:
     GIT_SUBMODULE_STRATEGY: recursive
