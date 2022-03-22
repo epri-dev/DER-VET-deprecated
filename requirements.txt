@@ -12,7 +12,6 @@ kiwisolver==1.2.0
 matplotlib==3.1.3
 multiprocess==0.70.10
 numpy==1.20.3
-numpy_financial==1.0.0
 osqp==0.6.1
 pandas==1.0.5
 Pillow==7.2.0
