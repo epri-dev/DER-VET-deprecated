@@ -237,7 +237,7 @@ class MicrogridScenario(Scenario):
         # any wholesale markets active?
         if self.service_agg.is_whole_sale_market():
             TellUser.warning('trying to size the power of the battery to maximize profits in ' +
-                             'wholesale markets. We will not run analysis power capacity is not ' +
+                             'wholesale markets. We will not run analysis if power capacity is not ' +
                              'limited by the DERs or through market participation constraints.')
             # check that at least one: (1) (2) is false
             # 1) if all wholesale markets has a max defined
