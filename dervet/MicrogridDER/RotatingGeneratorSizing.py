@@ -155,7 +155,7 @@ class RotatingGeneratorSizing(RotatingGenerator, DERExtension, ContinuousSizing)
 
         """
         self.rated_power = self.name_plate_capacity(True)
-        self.size_constraints = []
+#        self.size_constraints = []
 
     def sizing_summary(self):
         """
